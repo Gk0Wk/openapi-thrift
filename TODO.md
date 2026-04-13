@@ -21,6 +21,7 @@
 - [x] 已补 npm 发布前最小收口：切到 `@sttot/openapi-thrift`、补 MIT `LICENSE`、限制 tarball 只发最小文件集，并新增根工作区发布 workflow
 - [x] 已把仓库元数据对齐到 `Gk0Wk/openapi-thrift`，并将 workflow 改成以 CI / 安全审计 / 包体分析为主
 - [x] 已重写 README 顶部展示区：补 badge、`npx @sttot/openapi-thrift` 推荐用法和更适合 GitHub 首页的结构
+- [x] 已固定 npm 发布走官方 registry，并补齐 CLI shebang，消除 `npm publish` 的镜像源误投递与 `bin` warning
 
 ## 后续可继续
 

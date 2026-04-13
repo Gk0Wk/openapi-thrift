@@ -31,11 +31,12 @@
   ],
   "publishConfig": {
     "access": "public",
-    "provenance": true
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
   },
   "sideEffects": false,
   "bin": {
-    "openapi-thrift": "./dist/cli.js"
+    "openapi-thrift": "dist/cli.js"
   },
   "types": "./dist/index.d.ts",
   "exports": {
