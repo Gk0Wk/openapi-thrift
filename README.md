@@ -6,9 +6,9 @@
 
 [![CI](https://github.com/Gk0Wk/openapi-thrift/actions/workflows/openapi-thrift-ci.yml/badge.svg)](https://github.com/Gk0Wk/openapi-thrift/actions/workflows/openapi-thrift-ci.yml)
 [![npm version](https://img.shields.io/npm/v/%40sttot%2Fopenapi-thrift)](https://www.npmjs.com/package/@sttot/openapi-thrift)
-[![npm downloads](https://img.shields.io/npm/dm/%40sttot%2Fopenapi-thrift)](https://www.npmjs.com/package/@sttot/openapi-thrift)
-[![license](https://img.shields.io/npm/l/%40sttot%2Fopenapi-thrift)](https://github.com/Gk0Wk/openapi-thrift/blob/main/LICENSE)
-[![node](https://img.shields.io/node/v/%40sttot%2Fopenapi-thrift)](https://www.npmjs.com/package/@sttot/openapi-thrift)
+[![npm downloads](https://img.shields.io/npm/dm/%40sttot%2Fopenapi-thrift?label=downloads)](https://www.npmjs.com/package/@sttot/openapi-thrift)
+[![license](https://img.shields.io/github/license/Gk0Wk/openapi-thrift)](https://github.com/Gk0Wk/openapi-thrift/blob/main/LICENSE)
+[![node](https://img.shields.io/badge/node-%3E%3D20-5fa04e?logo=nodedotjs&logoColor=white)](https://www.npmjs.com/package/@sttot/openapi-thrift)
 [![GitHub stars](https://img.shields.io/github/stars/Gk0Wk/openapi-thrift?style=social)](https://github.com/Gk0Wk/openapi-thrift/stargazers)
 
 </div>

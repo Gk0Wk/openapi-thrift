@@ -22,12 +22,13 @@
 - [x] 已把仓库元数据对齐到 `Gk0Wk/openapi-thrift`，并将 workflow 改成以 CI / 安全审计 / 包体分析为主
 - [x] 已重写 README 顶部展示区：补 badge、`npx @sttot/openapi-thrift` 推荐用法和更适合 GitHub 首页的结构
 - [x] 已固定 npm 发布走官方 registry，并补齐 CLI shebang，消除 `npm publish` 的镜像源误投递与 `bin` warning
+- [x] 已完成 `@sttot/openapi-thrift@0.1.0` 首次公开发布，并将 README 的 `license/node` badge 改为稳定来源，避免新包索引抖动
 
 ## 后续可继续
 
 - [x] 继续按覆盖矩阵补 fixtures 与边界回归
 - [x] 已决定发布为公开 npm 包 `@sttot/openapi-thrift`
 - [x] 已补独立 CI workflow
-- [ ] 待实际确认 GitHub 仓库 `Gk0Wk/openapi-thrift` 已创建并与 npm metadata 一致
+- [x] 已确认 GitHub 仓库 `Gk0Wk/openapi-thrift` 已创建并与 npm metadata 一致
 - [ ] 待首次执行 GitHub Actions CI 并观察 `pnpm audit` 在 GitHub 环境下的噪声水平
-- [ ] 待实际配置 `NPM_TOKEN` 并完成首次 npm 发布
+- [ ] 待配置 `NPM_TOKEN`，为后续 GitHub Actions 自动发布做准备
