@@ -1,0 +1,608 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "DramaWork OpenAPI Thrift Boundary Lab Supported Subset",
+    "description": "Derived from the live APIFox boundary export. Keeps only the routes that are currently within the supported openapi-thrift profile.",
+    "version": "0.1.0"
+  },
+  "tags": [],
+  "paths": {
+    "/v1/lab/preferences": {
+      "post": {
+        "summary": "Update preferences via form-urlencoded",
+        "deprecated": false,
+        "description": "",
+        "operationId": "UpdatePreferences",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "theme": {
+                    "type": "string",
+                    "enum": ["light", "dark", "system"],
+                    "default": "system",
+                    "example": "system"
+                  },
+                  "timezone": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 64,
+                    "example": ""
+                  },
+                  "daily_digest": {
+                    "type": "boolean",
+                    "default": false,
+                    "example": "false"
+                  },
+                  "weekly_limit": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 1,
+                    "maximum": 50,
+                    "default": 20,
+                    "example": 20
+                  }
+                },
+                "required": ["theme", "timezone"]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "headers": {},
+            "x-apifox-ordering": 0
+          }
+        },
+        "security": [],
+        "x-apifox-folder": "",
+        "x-apifox-status": "released",
+        "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000799-run"
+      }
+    },
+    "/v1/lab/uploads/meta": {
+      "post": {
+        "summary": "Prepare upload metadata via multipart form",
+        "deprecated": false,
+        "description": "",
+        "operationId": "PrepareUploadMeta",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "bucket": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 32,
+                    "example": ""
+                  },
+                  "object_key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "example": ""
+                  },
+                  "checksum": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 128,
+                    "example": ""
+                  },
+                  "content_type": {
+                    "type": "string",
+                    "enum": ["image/png", "image/jpeg", "application/pdf"],
+                    "example": ""
+                  },
+                  "size_bytes": {
+                    "type": "integer",
+                    "format": "int64",
+                    "minimum": 1,
+                    "maximum": 10485760,
+                    "example": 0
+                  }
+                },
+                "required": [
+                  "bucket",
+                  "object_key",
+                  "content_type",
+                  "size_bytes"
+                ]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadMetaResponse"
+                }
+              }
+            },
+            "headers": {},
+            "x-apifox-ordering": 0
+          }
+        },
+        "security": [],
+        "x-apifox-folder": "",
+        "x-apifox-status": "released",
+        "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000800-run"
+      }
+    },
+    "/v1/lab/search": {
+      "get": {
+        "summary": "Search profiles with repeated-key query array",
+        "deprecated": false,
+        "description": "",
+        "operationId": "SearchProfiles",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "debug_token",
+            "in": "cookie",
+            "description": "",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 64
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          },
+          {
+            "name": "tags",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 5,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16
+              }
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchProfilesResponse"
+                }
+              }
+            },
+            "headers": {},
+            "x-apifox-ordering": 0
+          }
+        },
+        "security": [],
+        "x-apifox-folder": "",
+        "x-apifox-status": "released",
+        "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000801-run"
+      }
+    },
+    "/v1/lab/raw-json": {
+      "post": {
+        "summary": "Top-level scalar requestBody fallback",
+        "deprecated": false,
+        "description": "",
+        "operationId": "ValidateRawJson",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "format": "json"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "headers": {},
+            "x-apifox-ordering": 0
+          }
+        },
+        "security": [],
+        "x-apifox-folder": "",
+        "x-apifox-status": "released",
+        "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000802-run"
+      }
+    },
+    "/v1/lab/mutation/nullable-anyof": {
+      "post": {
+        "summary": "Mutation target: nullable anyOf",
+        "deprecated": false,
+        "description": "",
+        "operationId": "NullableAnyOfCandidate",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MutationNullablePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationNullableResponse"
+                }
+              }
+            },
+            "headers": {},
+            "x-apifox-ordering": 0
+          }
+        },
+        "security": [],
+        "x-apifox-folder": "",
+        "x-apifox-status": "released",
+        "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000806-run"
+      }
+    },
+    "/v1/lab/mutation/query-object": {
+      "get": {
+        "summary": "Mutation target: object query or deepObject",
+        "deprecated": false,
+        "description": "",
+        "operationId": "QueryObjectCandidate",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "filter_keyword",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 10,
+              "default": 5
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "headers": {},
+            "x-apifox-ordering": 0
+          }
+        },
+        "security": [],
+        "x-apifox-folder": "",
+        "x-apifox-status": "released",
+        "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000808-run"
+      }
+    },
+    "/v1/lab/mutation/query-array": {
+      "get": {
+        "summary": "Mutation target: non-default query array serialization",
+        "deprecated": false,
+        "description": "",
+        "operationId": "QueryArrayCandidate",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "tags",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "headers": {},
+            "x-apifox-ordering": 0
+          }
+        },
+        "security": [],
+        "x-apifox-folder": "",
+        "x-apifox-status": "released",
+        "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000809-run"
+      }
+    },
+    "/v1/lab/mutation/ref-parameter/{item_id}": {
+      "get": {
+        "summary": "Mutation target: parameter $ref",
+        "deprecated": false,
+        "description": "",
+        "operationId": "RefParameterCandidate",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["zh-CN", "en-US"],
+              "default": "zh-CN"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "headers": {},
+            "x-apifox-ordering": 0
+          }
+        },
+        "security": [],
+        "x-apifox-folder": "",
+        "x-apifox-status": "released",
+        "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000812-run"
+      }
+    },
+    "/v1/lab/mutation/multi-2xx": {
+      "get": {
+        "summary": "Mutation target: multiple success responses",
+        "deprecated": false,
+        "description": "",
+        "operationId": "Multi2xxCandidate",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "headers": {},
+            "x-apifox-ordering": 0
+          }
+        },
+        "security": [],
+        "x-apifox-folder": "",
+        "x-apifox-status": "released",
+        "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000813-run"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OkResponse": {
+        "type": "object",
+        "required": ["ok", "request_id"],
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "x-apifox-orders": ["ok", "request_id"],
+        "x-apifox-ignore-properties": [],
+        "x-apifox-folder": ""
+      },
+      "UploadMetaResponse": {
+        "type": "object",
+        "required": ["upload_token", "expires_at"],
+        "properties": {
+          "upload_token": {
+            "type": "string",
+            "format": "base64"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "x-apifox-orders": ["upload_token", "expires_at"],
+        "x-apifox-ignore-properties": [],
+        "x-apifox-folder": ""
+      },
+      "SearchProfilesResponse": {
+        "type": "object",
+        "required": ["total", "items"],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileSummary"
+            }
+          }
+        },
+        "x-apifox-orders": ["total", "items"],
+        "x-apifox-ignore-properties": [],
+        "x-apifox-folder": ""
+      },
+      "MutationNullablePayload": {
+        "type": "object",
+        "required": ["nickname"],
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 16,
+            "nullable": true
+          }
+        },
+        "x-apifox-orders": ["nickname"],
+        "x-apifox-ignore-properties": [],
+        "x-apifox-folder": ""
+      },
+      "MutationNullableResponse": {
+        "type": "object",
+        "required": ["nickname"],
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 16,
+            "nullable": true
+          }
+        },
+        "x-apifox-orders": ["nickname"],
+        "x-apifox-ignore-properties": [],
+        "x-apifox-folder": ""
+      },
+      "ProfileSummary": {
+        "type": "object",
+        "required": ["profile_id", "display_name", "role"],
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["user", "admin", "reviewer"]
+          }
+        },
+        "x-apifox-orders": ["profile_id", "display_name", "role"],
+        "x-apifox-ignore-properties": [],
+        "x-apifox-folder": ""
+      }
+    },
+    "responses": {},
+    "securitySchemes": {}
+  },
+  "servers": [],
+  "security": []
+}

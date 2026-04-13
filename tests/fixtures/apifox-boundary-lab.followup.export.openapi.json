@@ -1,0 +1,101 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "DramaWork OpenAPI Thrift Boundary Lab",
+    "description": "Baseline import file for APIFox boundary testing. The file uses YAML extension but JSON syntax so APIFox can import it and the current CLI can parse it directly.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/lab/mutation/no-content": {
+      "delete": {
+        "summary": "Mutation target: 204 empty response",
+        "deprecated": false,
+        "description": "",
+        "operationId": "NoContentCandidate",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "deleted",
+            "headers": {},
+            "x-apifox-name": "删除成功",
+            "x-apifox-ordering": 0
+          }
+        },
+        "security": [],
+        "x-apifox-folder": "",
+        "x-apifox-status": "released",
+        "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442130755-run"
+      }
+    },
+    "/v1/lab/mutation/multi-content-type": {
+      "post": {
+        "summary": "Mutation target: multiple content-types",
+        "deprecated": false,
+        "description": "",
+        "operationId": "MultiContentTypeCandidate",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 32
+                  }
+                },
+                "x-apifox-orders": ["name"],
+                "x-apifox-ignore-properties": []
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["ok"],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "x-apifox-orders": ["ok"],
+                  "x-apifox-ignore-properties": []
+                }
+              }
+            },
+            "headers": {},
+            "x-apifox-name": "成功",
+            "x-apifox-ordering": 0
+          }
+        },
+        "security": [],
+        "x-apifox-folder": "",
+        "x-apifox-status": "released",
+        "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442130756-run"
+      }
+    }
+  }
+}

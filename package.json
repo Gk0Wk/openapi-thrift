@@ -1,0 +1,60 @@
+{
+  "name": "@sttot/openapi-thrift",
+  "version": "0.1.0",
+  "description": "Restricted OpenAPI 3.0 JSON to Thrift IDL projector for APIFox/OpenAPI to CloudWeGo workflows.",
+  "packageManager": "pnpm@10.14.0",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://github.com/Gk0Wk/openapi-thrift#readme",
+  "bugs": {
+    "url": "https://github.com/Gk0Wk/openapi-thrift/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gk0Wk/openapi-thrift.git"
+  },
+  "keywords": [
+    "openapi",
+    "thrift",
+    "apifox",
+    "cloudwego",
+    "hz",
+    "kitex"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "sideEffects": false,
+  "bin": {
+    "openapi-thrift": "./dist/cli.js"
+  },
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "biome check src tests",
+    "test": "pnpm run build && node --test tests/*.test.mjs",
+    "pack:check": "node scripts/check-pack.mjs",
+    "prepublishOnly": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run pack:check"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.10",
+    "@types/node": "25.5.2",
+    "typescript": "6.0.2"
+  }
+}

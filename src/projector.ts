@@ -1,0 +1,1646 @@
+import type {
+  JsonValue,
+  OpenApiDocument,
+  OpenApiMediaType,
+  OpenApiOperation,
+  OpenApiParameter,
+  OpenApiParameterOrReference,
+  OpenApiPathItem,
+  OpenApiReference,
+  OpenApiRequestBody,
+  OpenApiResponse,
+  OpenApiSchema,
+  OpenApiSchemaObject,
+  ProjectionOptions,
+  ProjectionResult,
+  ThriftDocument,
+  ThriftField,
+  ThriftServiceMethod,
+  ThriftStruct,
+} from "./model.js"
+import { buildRouteKey, normalizeRoutePath } from "./thrift-route-index.js"
+
+const SUPPORTED_HTTP_METHODS = [
+  "get",
+  "post",
+  "put",
+  "delete",
+  "patch",
+  "head",
+  "options",
+] as const
+
+const NO_REQUEST_BODY_METHODS = new Set(["get", "delete", "head", "options"])
+const DEFAULT_NAMESPACE = "dramawork.openapi"
+const EMPTY_RESPONSE_NAME = "EmptyResponse"
+const SUPPORTED_STRING_FORMATS = new Set([
+  "base64",
+  "binary",
+  "date",
+  "date-time",
+  "email",
+  "e164",
+  "hexcolor",
+  "hostname",
+  "ipv4",
+  "ipv6",
+  "json",
+  "jwt",
+  "uri",
+  "url",
+  "ulid",
+  "uuid",
+  "uuid3",
+  "uuid4",
+  "uuid5",
+])
+const SUPPORTED_INTEGER_FORMATS = new Set(["int32", "int64"])
+const SUPPORTED_NUMBER_FORMATS = new Set(["float", "double"])
+
+type SupportedHttpMethod = (typeof SUPPORTED_HTTP_METHODS)[number]
+
+interface ProjectionContext {
+  componentSchemas: Record<string, OpenApiSchema>
+  componentRequestBodies: Record<string, OpenApiRequestBody>
+  definitions: Map<string, ThriftStruct>
+  orderedNames: string[]
+  inProgress: Set<string>
+  usedTypeNames: Set<string>
+  emptyResponseAdded: boolean
+}
+
+interface PendingOperation {
+  method: SupportedHttpMethod
+  path: string
+  operation: OpenApiOperation
+  pathParameters: OpenApiParameterOrReference[]
+}
+
+interface ProjectedSchema {
+  type: string
+  comment?: string[]
+}
+
+interface RequestBodyProjectionConfig {
+  annotation: "api.body" | "api.form" | "api.raw_body"
+  mediaType: OpenApiMediaType
+  contentType: string
+}
+
+interface ResponseProjectionConfig {
+  kind: "json" | "raw"
+  mediaType?: OpenApiMediaType
+  contentType?: string
+}
+
+export class OpenApiProjectionError extends Error {
+  readonly pointer?: string
+
+  constructor(message: string, pointer?: string) {
+    super(pointer ? `${message} (${pointer})` : message)
+    this.name = "OpenApiProjectionError"
+    this.pointer = pointer
+  }
+}
+
+export function convertOpenApiToThrift(
+  input: string | OpenApiDocument,
+  options: ProjectionOptions = {},
+): ProjectionResult {
+  const document = parseOpenApiDocument(input)
+  const thriftDocument = projectDocument(document, options)
+  return {
+    document: thriftDocument,
+    thrift: renderThriftDocument(thriftDocument),
+  }
+}
+
+export function parseOpenApiDocument(
+  input: string | OpenApiDocument,
+): OpenApiDocument {
+  const parsed = typeof input === "string" ? safeJsonParse(input) : input
+  if (!isObject(parsed)) {
+    throw new OpenApiProjectionError("OpenAPI 输入必须是 JSON object")
+  }
+  const openapi = parsed.openapi
+  if (
+    typeof openapi !== "string" ||
+    (!openapi.startsWith("3.0") && !openapi.startsWith("3.1"))
+  ) {
+    throw new OpenApiProjectionError("当前只支持 OpenAPI 3.x JSON 文档")
+  }
+  return parsed as OpenApiDocument
+}
+
+export function projectDocument(
+  document: OpenApiDocument,
+  options: ProjectionOptions = {},
+): ThriftDocument {
+  const context: ProjectionContext = {
+    componentSchemas: document.components?.schemas ?? {},
+    componentRequestBodies: document.components?.requestBodies ?? {},
+    definitions: new Map<string, ThriftStruct>(),
+    orderedNames: [],
+    inProgress: new Set<string>(),
+    usedTypeNames: new Set<string>(),
+    emptyResponseAdded: false,
+  }
+
+  const serviceName =
+    options.serviceName ?? buildServiceName(document.info?.title)
+  const namespace = options.namespace ?? DEFAULT_NAMESPACE
+  const operations = collectOperations(document.paths ?? {})
+  const methods: ThriftServiceMethod[] = []
+
+  for (const item of operations) {
+    const methodName = buildMethodName(
+      item.operation.operationId,
+      item.method,
+      item.path,
+      options.routeMethodNames,
+    )
+    const requestType = projectRequestStruct(context, item, methodName)
+    const responseType = projectResponseType(
+      context,
+      item.operation,
+      methodName,
+    )
+
+    methods.push({
+      name: methodName,
+      requestType,
+      responseType,
+      httpMethod: item.method,
+      path: normalizeRoutePath(item.path),
+      comment: collectComment(
+        item.operation.summary,
+        item.operation.description,
+      ),
+    })
+  }
+
+  return {
+    namespace,
+    serviceName,
+    definitions: context.orderedNames.map((name) => {
+      const definition = context.definitions.get(name)
+      if (!definition) {
+        throw new OpenApiProjectionError(`缺少类型定义 ${name}`)
+      }
+      return definition
+    }),
+    methods,
+  }
+}
+
+export function renderThriftDocument(document: ThriftDocument): string {
+  const lines: string[] = []
+  lines.push("// Generated by @sttot/openapi-thrift")
+  lines.push("// Unsupported OpenAPI features fail fast by design.")
+  lines.push("")
+  lines.push(`namespace go ${document.namespace}`)
+
+  for (const definition of document.definitions) {
+    lines.push("")
+    appendComment(lines, definition.comment)
+    lines.push(`struct ${definition.name} {`)
+    for (const field of definition.fields) {
+      appendComment(lines, field.comment, "  ")
+      const annotationText =
+        field.annotations.length > 0 ? ` (${field.annotations.join(", ")})` : ""
+      lines.push(
+        `  ${field.id}: ${field.requiredness} ${field.type} ${field.name}${annotationText}`,
+      )
+    }
+    lines.push("}")
+  }
+
+  lines.push("")
+  lines.push(`service ${document.serviceName} {`)
+  for (const method of document.methods) {
+    appendComment(lines, method.comment, "  ")
+    lines.push(
+      `  ${method.responseType} ${method.name}(1: ${method.requestType} req) (api.${method.httpMethod}="${method.path}")`,
+    )
+  }
+  lines.push("}")
+  lines.push("")
+
+  return lines.join("\n")
+}
+
+function collectOperations(
+  paths: Record<string, OpenApiPathItem>,
+): PendingOperation[] {
+  const items: PendingOperation[] = []
+  const sortedPaths = Object.keys(paths).sort()
+  for (const path of sortedPaths) {
+    const pathItem = paths[path]
+    if (!pathItem) {
+      continue
+    }
+    for (const method of SUPPORTED_HTTP_METHODS) {
+      const operation = pathItem[method]
+      if (!operation) {
+        continue
+      }
+      items.push({
+        method,
+        path,
+        operation,
+        pathParameters: pathItem.parameters ?? [],
+      })
+    }
+  }
+  if (items.length === 0) {
+    throw new OpenApiProjectionError("OpenAPI 文档里没有可转换的 paths/methods")
+  }
+  return items
+}
+
+function projectRequestStruct(
+  context: ProjectionContext,
+  item: PendingOperation,
+  methodName: string,
+): string {
+  const requestName = allocateTypeName(context, `${methodName}Request`)
+  const fields: ThriftField[] = []
+  const parameters = mergeParameters(
+    item.pathParameters,
+    item.operation.parameters ?? [],
+  )
+  const usedFieldNames = new Set<string>()
+
+  let nextId = 1
+  for (const [index, parameterOrReference] of parameters.entries()) {
+    if (isReference(parameterOrReference)) {
+      throw new OpenApiProjectionError(
+        "第一版暂不支持 parameter $ref，请在导出前展开参数",
+        `${item.path}#parameters[${index}]`,
+      )
+    }
+    const parameter = parameterOrReference
+    if (parameter.content && Object.keys(parameter.content).length > 0) {
+      throw new OpenApiProjectionError(
+        "当前不支持 parameter content，请改为 schema 参数或手写 transport",
+        `${item.path}.${parameter.in}.${parameter.name}`,
+      )
+    }
+    const schema = parameter.schema
+    if (!schema) {
+      throw new OpenApiProjectionError(
+        "参数缺少 schema",
+        `${item.path}.${parameter.name}`,
+      )
+    }
+    const field = buildParameterField(
+      context,
+      requestName,
+      parameter,
+      schema,
+      nextId,
+      usedFieldNames,
+      `${item.path}.${parameter.in}.${parameter.name}`,
+    )
+    fields.push(field)
+    nextId += 1
+  }
+
+  if (item.operation.requestBody) {
+    if (NO_REQUEST_BODY_METHODS.has(item.method)) {
+      throw new OpenApiProjectionError(
+        `${item.method.toUpperCase()} 请求不允许 requestBody`,
+        item.path,
+      )
+    }
+    const bodyFields = buildRequestBodyFields(
+      context,
+      requestName,
+      item.operation.requestBody,
+      nextId,
+      usedFieldNames,
+      `${item.path}.${item.method}.requestBody`,
+    )
+    fields.push(...bodyFields)
+  }
+
+  registerDefinition(context, {
+    name: requestName,
+    comment: collectComment(item.operation.summary, item.operation.description),
+    fields,
+  })
+
+  return requestName
+}
+
+function projectResponseType(
+  context: ProjectionContext,
+  operation: OpenApiOperation,
+  methodName: string,
+): string {
+  const response = selectSuccessResponse(operation.responses ?? {}, methodName)
+  const projectionConfig = selectResponseProjectionConfig(
+    response.content,
+    `${methodName}.responses`,
+  )
+  if (!projectionConfig) {
+    ensureEmptyResponse(context)
+    return EMPTY_RESPONSE_NAME
+  }
+  if (projectionConfig.kind === "raw") {
+    return ensureRawBodyResponse(
+      context,
+      methodName,
+      projectionConfig.mediaType?.schema,
+      projectionConfig.contentType ?? "application/octet-stream",
+      `${methodName}.responses.2xx`,
+    )
+  }
+  const mediaType = projectionConfig.mediaType
+  if (!mediaType?.schema) {
+    ensureEmptyResponse(context)
+    return EMPTY_RESPONSE_NAME
+  }
+  return projectSchemaType(
+    context,
+    mediaType.schema,
+    `${methodName}Response`,
+    `${methodName}.responses.2xx`,
+  ).type
+}
+
+function buildParameterField(
+  context: ProjectionContext,
+  requestName: string,
+  parameter: OpenApiParameter,
+  schema: OpenApiSchema,
+  id: number,
+  usedFieldNames: Set<string>,
+  pointer: string,
+): ThriftField {
+  assertParameterSupported(context, parameter, pointer)
+  const projected = projectSchemaType(
+    context,
+    schema,
+    `${requestName}${toPascalCase(parameter.name)}`,
+    pointer,
+  )
+  const requiredness = parameter.in === "path" ? "required" : "optional"
+  const fieldName = allocateFieldName(usedFieldNames, parameter.name)
+  const annotations = [
+    `${buildParameterAnnotation(parameter.in)}="${parameter.name}"`,
+    ...buildGoTagAnnotations(schema, {
+      required: Boolean(parameter.required),
+      allowDefault: parameter.in !== "path",
+      requiredness,
+      pointer,
+    }),
+  ]
+
+  return {
+    id,
+    requiredness,
+    type: projected.type,
+    name: fieldName,
+    annotations,
+    comment: collectComment(parameter.description),
+  }
+}
+
+function assertParameterSupported(
+  context: ProjectionContext,
+  parameter: OpenApiParameter,
+  pointer: string,
+): void {
+  if (!parameter.schema || parameter.in !== "query") {
+    return
+  }
+
+  const resolvedSchema = resolveSchema(
+    context,
+    parameter.schema,
+    pointer,
+  ).schema
+  const style = parameter.style ?? "form"
+  const explode = parameter.explode ?? style === "form"
+
+  if (style === "deepObject") {
+    throw new OpenApiProjectionError(
+      "当前不支持 deepObject query 参数，请改为简单字段或手写 transport",
+      pointer,
+    )
+  }
+  if (style === "spaceDelimited" || style === "pipeDelimited") {
+    throw new OpenApiProjectionError(
+      `当前不支持 ${style} query 参数序列化，请改为默认 form/explode 语义`,
+      pointer,
+    )
+  }
+  if (looksLikeObjectSchema(resolvedSchema)) {
+    throw new OpenApiProjectionError(
+      "当前不支持 object query 参数自动投影，请改为简单字段或手写 transport",
+      pointer,
+    )
+  }
+  if (resolvedSchema.type === "array" && (style !== "form" || !explode)) {
+    throw new OpenApiProjectionError(
+      "当前只支持 query array 参数的 form + explode=true（重复 key）序列化",
+      pointer,
+    )
+  }
+}
+
+function buildRequestBodyFields(
+  context: ProjectionContext,
+  requestName: string,
+  requestBodyLike: OpenApiRequestBody | OpenApiReference,
+  startId: number,
+  usedFieldNames: Set<string>,
+  pointer: string,
+): ThriftField[] {
+  const requestBody = resolveRequestBody(context, requestBodyLike, pointer)
+
+  const projectionConfig = selectRequestBodyProjectionConfig(
+    requestBody.content,
+    pointer,
+  )
+  if (!projectionConfig?.mediaType.schema) {
+    return []
+  }
+
+  const schema = resolveSchema(
+    context,
+    projectionConfig.mediaType.schema,
+    pointer,
+  )
+  assertSchemaSupported(schema.schema, pointer)
+  if (!looksLikeObjectSchema(schema.schema)) {
+    if (!isJsonContentType(projectionConfig.contentType)) {
+      throw new OpenApiProjectionError(
+        `${projectionConfig.contentType} 请求体顶层必须是 object schema`,
+        pointer,
+      )
+    }
+    const projected = projectSchemaType(
+      context,
+      projectionConfig.mediaType.schema,
+      `${requestName}Body`,
+      pointer,
+    )
+    return [
+      {
+        id: startId,
+        requiredness: "optional",
+        type: projected.type,
+        name: allocateFieldName(usedFieldNames, "body"),
+        annotations: [
+          'api.raw_body=""',
+          ...buildGoTagAnnotations(projectionConfig.mediaType.schema, {
+            required: Boolean(requestBody.required),
+            allowDefault: true,
+            requiredness: "optional",
+            pointer,
+          }),
+        ],
+        comment: collectComment(
+          getSchemaDescription(projectionConfig.mediaType.schema),
+        ),
+      },
+    ]
+  }
+  if (schema.schema.additionalProperties) {
+    throw new OpenApiProjectionError(
+      "requestBody 顶层不支持 additionalProperties",
+      pointer,
+    )
+  }
+
+  const requiredFields = new Set(schema.schema.required ?? [])
+  const properties = schema.schema.properties ?? {}
+  const fields: ThriftField[] = []
+  let nextId = startId
+  for (const [propertyName, propertySchema] of Object.entries(properties)) {
+    assertFormFileSchemaSupported(
+      propertySchema,
+      projectionConfig.contentType,
+      `${pointer}.${propertyName}`,
+    )
+    const projected = projectSchemaType(
+      context,
+      propertySchema,
+      `${requestName}${toPascalCase(propertyName)}`,
+      `${pointer}.${propertyName}`,
+    )
+    const fieldName = allocateFieldName(usedFieldNames, propertyName)
+    fields.push({
+      id: nextId,
+      requiredness: "optional",
+      type: projected.type,
+      name: fieldName,
+      annotations: [
+        `${projectionConfig.annotation}="${propertyName}"`,
+        ...buildGoTagAnnotations(propertySchema, {
+          required: requiredFields.has(propertyName),
+          allowDefault: true,
+          requiredness: "optional",
+          pointer: `${pointer}.${propertyName}`,
+        }),
+      ],
+      comment: collectComment(getSchemaDescription(propertySchema)),
+    })
+    nextId += 1
+  }
+  return fields
+}
+
+function projectSchemaType(
+  context: ProjectionContext,
+  schemaOrReference: OpenApiSchema,
+  suggestedName: string,
+  pointer: string,
+): ProjectedSchema {
+  const resolved = resolveSchema(context, schemaOrReference, pointer)
+  const schema = resolved.schema
+  assertSchemaSupported(schema, pointer)
+
+  if (schema.enum && schema.enum.length > 0) {
+    return {
+      type: projectEnumBackedScalar(schema, pointer),
+      comment: collectComment(schema.description),
+    }
+  }
+
+  if (schema.additionalProperties) {
+    if (schema.additionalProperties === true) {
+      throw new OpenApiProjectionError(
+        "additionalProperties: true 不在第一版支持范围内",
+        pointer,
+      )
+    }
+    if (schema.properties && Object.keys(schema.properties).length > 0) {
+      throw new OpenApiProjectionError(
+        "当前不支持 properties 与 additionalProperties 混用的 object",
+        pointer,
+      )
+    }
+    const projectedValueType = projectSchemaType(
+      context,
+      schema.additionalProperties,
+      `${suggestedName}Value`,
+      `${pointer}.additionalProperties`,
+    )
+    return {
+      type: `map<string, ${projectedValueType.type}>`,
+      comment: collectComment(schema.description),
+    }
+  }
+
+  if (looksLikeObjectSchema(schema)) {
+    const definitionName = resolved.name
+      ? ensureNamedStruct(context, resolved.name, schema, pointer)
+      : ensureNamedStruct(
+          context,
+          allocateTypeName(context, suggestedName),
+          schema,
+          pointer,
+        )
+    return {
+      type: definitionName,
+      comment: collectComment(schema.description),
+    }
+  }
+
+  if (schema.type === "array") {
+    if (!schema.items) {
+      throw new OpenApiProjectionError("array schema 缺少 items", pointer)
+    }
+    const itemType = projectSchemaType(
+      context,
+      schema.items,
+      `${suggestedName}Item`,
+      `${pointer}.items`,
+    )
+    return {
+      type: `list<${itemType.type}>`,
+      comment: collectComment(schema.description),
+    }
+  }
+
+  return {
+    type: mapScalarType(schema, pointer),
+    comment: collectComment(schema.description),
+  }
+}
+
+function ensureNamedStruct(
+  context: ProjectionContext,
+  name: string,
+  schema: OpenApiSchemaObject,
+  pointer: string,
+): string {
+  if (context.definitions.has(name) || context.inProgress.has(name)) {
+    return name
+  }
+
+  context.inProgress.add(name)
+  const usedFieldNames = new Set<string>()
+  const requiredFields = new Set(schema.required ?? [])
+  const fields: ThriftField[] = []
+  const properties = schema.properties ?? {}
+  let nextId = 1
+
+  for (const [propertyName, propertySchema] of Object.entries(properties)) {
+    const projected = projectSchemaType(
+      context,
+      propertySchema,
+      `${name}${toPascalCase(propertyName)}`,
+      `${pointer}.${propertyName}`,
+    )
+    fields.push({
+      id: nextId,
+      requiredness: "optional",
+      type: projected.type,
+      name: allocateFieldName(usedFieldNames, propertyName),
+      annotations: buildGoTagAnnotations(propertySchema, {
+        required: requiredFields.has(propertyName),
+        allowDefault: true,
+        requiredness: "optional",
+        pointer: `${pointer}.${propertyName}`,
+      }),
+      comment: collectComment(getSchemaDescription(propertySchema)),
+    })
+    nextId += 1
+  }
+
+  context.inProgress.delete(name)
+  registerDefinition(context, {
+    name,
+    comment: collectComment(schema.description),
+    fields,
+  })
+  return name
+}
+
+function registerDefinition(
+  context: ProjectionContext,
+  definition: ThriftStruct,
+): void {
+  if (context.definitions.has(definition.name)) {
+    return
+  }
+  context.definitions.set(definition.name, definition)
+  context.orderedNames.push(definition.name)
+}
+
+function ensureEmptyResponse(context: ProjectionContext): void {
+  if (context.emptyResponseAdded) {
+    return
+  }
+  context.emptyResponseAdded = true
+  registerDefinition(context, {
+    name: EMPTY_RESPONSE_NAME,
+    comment: ["HTTP 2xx with no JSON response body."],
+    fields: [],
+  })
+}
+
+function ensureRawBodyResponse(
+  context: ProjectionContext,
+  methodName: string,
+  schemaOrReference: OpenApiSchema | undefined,
+  contentType: string,
+  pointer: string,
+): string {
+  const name = allocateTypeName(context, `${methodName}RawBodyResponse`)
+  if (context.definitions.has(name)) {
+    return name
+  }
+
+  registerDefinition(context, {
+    name,
+    comment: [`HTTP raw success body. content-type=${contentType}.`],
+    fields: [
+      {
+        id: 1,
+        requiredness: "optional",
+        type: schemaOrReference
+          ? projectRawBodySchemaType(context, schemaOrReference, pointer)
+          : inferRawBodyTypeFromContentType(contentType),
+        name: "body",
+        annotations: ['api.raw_body=""'],
+      },
+    ],
+  })
+
+  return name
+}
+
+function resolveSchema(
+  context: ProjectionContext,
+  schemaOrReference: OpenApiSchema,
+  pointer: string,
+): { name?: string; schema: OpenApiSchemaObject } {
+  if (isNullableUnion(schemaOrReference)) {
+    const unwrapped = unwrapNullableUnion(schemaOrReference, pointer)
+    const resolved = resolveSchema(context, unwrapped, pointer)
+    return {
+      name: resolved.name,
+      schema: {
+        ...resolved.schema,
+        nullable: true,
+      },
+    }
+  }
+  if (isReference(schemaOrReference)) {
+    const ref = schemaOrReference.$ref
+    const match = /^#\/components\/schemas\/(?<name>[^/]+)$/.exec(ref)
+    if (!match?.groups?.name) {
+      throw new OpenApiProjectionError(
+        "当前只支持 #/components/schemas/* 本地引用",
+        pointer,
+      )
+    }
+    const schema = context.componentSchemas[match.groups.name]
+    if (!schema) {
+      throw new OpenApiProjectionError(`找不到 schema 引用 ${ref}`, pointer)
+    }
+    const resolved = resolveSchema(context, schema, pointer)
+    return {
+      name: toPascalCase(match.groups.name),
+      schema: resolved.schema,
+    }
+  }
+  if (schemaOrReference.allOf?.length) {
+    return {
+      schema: resolveAllOfSchema(context, schemaOrReference, pointer),
+    }
+  }
+  return {
+    schema: schemaOrReference,
+  }
+}
+
+function resolveRequestBody(
+  context: ProjectionContext,
+  requestBodyLike: OpenApiRequestBody | OpenApiReference,
+  pointer: string,
+): OpenApiRequestBody {
+  if (!isReference(requestBodyLike)) {
+    return requestBodyLike
+  }
+
+  const ref = requestBodyLike.$ref
+  const match = /^#\/components\/requestBodies\/(?<name>[^/]+)$/.exec(ref)
+  if (!match?.groups?.name) {
+    throw new OpenApiProjectionError(
+      "当前只支持 #/components/requestBodies/* 本地引用",
+      pointer,
+    )
+  }
+  const requestBody = context.componentRequestBodies[match.groups.name]
+  if (!requestBody) {
+    throw new OpenApiProjectionError(`找不到 requestBody 引用 ${ref}`, pointer)
+  }
+  return resolveRequestBody(context, requestBody, pointer)
+}
+
+function resolveAllOfSchema(
+  context: ProjectionContext,
+  schema: OpenApiSchemaObject,
+  pointer: string,
+): OpenApiSchemaObject {
+  const mergedProperties: Record<string, OpenApiSchema> = {
+    ...(schema.properties ?? {}),
+  }
+  const mergedRequired = new Set(schema.required ?? [])
+  let mergedDescription = schema.description
+  let mergedNullable = Boolean(schema.nullable)
+
+  for (const [index, part] of (schema.allOf ?? []).entries()) {
+    const resolved = resolveSchema(context, part, `${pointer}.allOf[${index}]`)
+    const partSchema = resolved.schema
+    if (!looksLikeObjectSchema(partSchema)) {
+      throw new OpenApiProjectionError(
+        "当前只支持可组合 object schema 的 allOf",
+        `${pointer}.allOf[${index}]`,
+      )
+    }
+    for (const [propertyName, propertySchema] of Object.entries(
+      partSchema.properties ?? {},
+    )) {
+      mergedProperties[propertyName] = propertySchema
+    }
+    for (const requiredName of partSchema.required ?? []) {
+      mergedRequired.add(requiredName)
+    }
+    mergedDescription = mergedDescription ?? partSchema.description
+    mergedNullable = mergedNullable || Boolean(partSchema.nullable)
+  }
+
+  return {
+    ...schema,
+    type: "object",
+    description: mergedDescription,
+    nullable: mergedNullable || undefined,
+    properties: mergedProperties,
+    required: [...mergedRequired],
+    allOf: undefined,
+  }
+}
+
+function mergeParameters(
+  pathParameters: OpenApiParameterOrReference[],
+  operationParameters: OpenApiParameterOrReference[],
+): OpenApiParameterOrReference[] {
+  const merged = new Map<string, OpenApiParameterOrReference>()
+  for (const parameter of pathParameters) {
+    merged.set(parameterKey(parameter), parameter)
+  }
+  for (const parameter of operationParameters) {
+    merged.set(parameterKey(parameter), parameter)
+  }
+  return [...merged.values()]
+}
+
+function parameterKey(parameter: OpenApiParameterOrReference): string {
+  if (isReference(parameter)) {
+    return parameter.$ref
+  }
+  return `${parameter.in}:${parameter.name}`
+}
+
+function buildParameterAnnotation(location: OpenApiParameter["in"]): string {
+  switch (location) {
+    case "path":
+      return "api.path"
+    case "query":
+      return "api.query"
+    case "header":
+      return "api.header"
+    case "cookie":
+      return "api.cookie"
+  }
+}
+
+function buildGoTagAnnotations(
+  schemaOrReference: OpenApiSchema,
+  options: {
+    required: boolean
+    allowDefault: boolean
+    requiredness: "required" | "optional"
+    pointer: string
+  },
+): string[] {
+  const schema = isReference(schemaOrReference)
+    ? undefined
+    : normalizeInlineSchema(schemaOrReference, options.pointer)
+
+  const tagParts: string[] = []
+  const validators: string[] = []
+  if (options.required && options.requiredness !== "required") {
+    validators.push("required")
+  }
+  if (schema?.enum && schema.enum.length > 0) {
+    validators.push(buildEnumValidator(schema.enum, options.pointer))
+  }
+  if (schema) {
+    validators.push(...buildSchemaValidators(schema))
+    validators.push(...getManualValidators(schema, options.pointer))
+  }
+
+  if (validators.length > 0) {
+    tagParts.push(`validate:"${validators.join(",")}"`)
+  }
+  if (options.allowDefault && schema?.default !== undefined) {
+    const renderedDefault = renderDefaultValue(schema.default)
+    if (renderedDefault) {
+      tagParts.unshift(`default:"${renderedDefault}"`)
+    }
+  }
+
+  if (tagParts.length === 0) {
+    return []
+  }
+  return [`go.tag='${tagParts.join(" ")}'`]
+}
+
+function buildSchemaValidators(schema: OpenApiSchemaObject): string[] {
+  const validators: string[] = []
+
+  switch (schema.type) {
+    case "integer":
+    case "number":
+      if (typeof schema.minimum === "number") {
+        validators.push(`gte=${renderValidatorNumber(schema.minimum)}`)
+      }
+      if (typeof schema.maximum === "number") {
+        validators.push(`lte=${renderValidatorNumber(schema.maximum)}`)
+      }
+      break
+    case "string":
+      if (typeof schema.minLength === "number") {
+        validators.push(`min=${schema.minLength}`)
+      }
+      if (typeof schema.maxLength === "number") {
+        validators.push(`max=${schema.maxLength}`)
+      }
+      break
+    case "array":
+      if (typeof schema.minItems === "number") {
+        validators.push(`min=${schema.minItems}`)
+      }
+      if (typeof schema.maxItems === "number") {
+        validators.push(`max=${schema.maxItems}`)
+      }
+      break
+    default:
+      break
+  }
+
+  const formatValidator = mapFormatValidator(schema.format)
+  if (formatValidator) {
+    validators.push(formatValidator)
+  }
+
+  return dedupeValidators(validators)
+}
+
+function renderValidatorNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : String(value)
+}
+
+function mapFormatValidator(format: string | undefined): string | undefined {
+  switch (format) {
+    case "base64":
+      return "base64"
+    case "date":
+      return "datetime=2006-01-02"
+    case "date-time":
+      return "datetime=2006-01-02T15:04:05Z07:00"
+    case "email":
+      return "email"
+    case "e164":
+      return "e164"
+    case "hexcolor":
+      return "hexcolor"
+    case "hostname":
+      return "hostname_rfc1123"
+    case "ipv4":
+      return "ipv4"
+    case "ipv6":
+      return "ipv6"
+    case "json":
+      return "json"
+    case "jwt":
+      return "jwt"
+    case "uri":
+      return "uri"
+    case "url":
+      return "url"
+    case "ulid":
+      return "ulid"
+    case "uuid":
+      return "uuid"
+    case "uuid3":
+      return "uuid3"
+    case "uuid4":
+      return "uuid4"
+    case "uuid5":
+      return "uuid5"
+    default:
+      return undefined
+  }
+}
+
+function dedupeValidators(validators: string[]): string[] {
+  return [...new Set(validators.filter(Boolean))]
+}
+
+function getManualValidators(
+  schema: OpenApiSchemaObject,
+  pointer: string,
+): string[] {
+  const raw = schema["x-dramawork-validate"]
+  if (raw === undefined) {
+    return []
+  }
+  if (typeof raw === "string") {
+    const value = raw.trim()
+    if (!value) {
+      throw new OpenApiProjectionError(
+        "x-dramawork-validate 不能为空字符串",
+        pointer,
+      )
+    }
+    return [value]
+  }
+  if (Array.isArray(raw)) {
+    const values = raw
+      .map((item) => {
+        if (typeof item !== "string") {
+          throw new OpenApiProjectionError(
+            "x-dramawork-validate 数组只能包含字符串",
+            pointer,
+          )
+        }
+        return item.trim()
+      })
+      .filter(Boolean)
+    if (values.length === 0) {
+      throw new OpenApiProjectionError(
+        "x-dramawork-validate 数组不能为空",
+        pointer,
+      )
+    }
+    return values
+  }
+  throw new OpenApiProjectionError(
+    "x-dramawork-validate 只支持 string 或 string[]",
+    pointer,
+  )
+}
+
+function buildEnumValidator(
+  enumValues: Array<string | number>,
+  pointer: string,
+): string {
+  const values = enumValues.map((value) => {
+    if (typeof value === "string") {
+      if (/\s/.test(value)) {
+        throw new OpenApiProjectionError(
+          "第一版不支持包含空白字符的 string enum，请先手工收紧枚举值",
+          pointer,
+        )
+      }
+      return value
+    }
+    return String(value)
+  })
+  return `oneof=${values.join(" ")}`
+}
+
+function projectEnumBackedScalar(
+  schema: OpenApiSchemaObject,
+  pointer: string,
+): string {
+  if (!schema.enum || schema.enum.length === 0) {
+    throw new OpenApiProjectionError("enum schema 缺少枚举值", pointer)
+  }
+  const firstValue = schema.enum[0]
+  if (typeof firstValue === "string") {
+    return "string"
+  }
+  return mapScalarType(schema, pointer)
+}
+
+function mapScalarType(schema: OpenApiSchemaObject, pointer: string): string {
+  const type = schema.type
+  switch (type) {
+    case "string":
+      return schema.format === "binary" ? "binary" : "string"
+    case "integer":
+      return schema.format === "int64" ? "i64" : "i32"
+    case "number":
+      return "double"
+    case "boolean":
+      return "bool"
+    default:
+      throw new OpenApiProjectionError(
+        `不支持的 schema type: ${String(type)}`,
+        pointer,
+      )
+  }
+}
+
+function projectRawBodySchemaType(
+  context: ProjectionContext,
+  schemaOrReference: OpenApiSchema,
+  pointer: string,
+): string {
+  const resolved = resolveSchema(context, schemaOrReference, pointer).schema
+  assertSchemaSupported(resolved, pointer)
+  if (looksLikeObjectSchema(resolved) || resolved.type === "array") {
+    throw new OpenApiProjectionError(
+      "非 JSON success response 只支持 string/binary 标量或省略 schema",
+      pointer,
+    )
+  }
+  if (resolved.type && resolved.type !== "string") {
+    throw new OpenApiProjectionError(
+      "非 JSON success response 只支持 string/binary 标量或省略 schema",
+      pointer,
+    )
+  }
+  return mapScalarType(resolved, pointer)
+}
+
+function inferRawBodyTypeFromContentType(contentType: string): string {
+  return contentType.startsWith("text/") ? "string" : "binary"
+}
+
+function selectSuccessResponse(
+  responses: Record<string, OpenApiResponse>,
+  pointer: string,
+): OpenApiResponse {
+  const successCodes = Object.keys(responses)
+    .filter((statusCode) => /^2\d\d$/.test(statusCode))
+    .sort()
+
+  if (successCodes.length === 0) {
+    throw new OpenApiProjectionError(
+      "operation 缺少 2xx success response",
+      pointer,
+    )
+  }
+  if (successCodes.length > 1) {
+    throw new OpenApiProjectionError(
+      "第一版暂不支持多个 2xx success response，请先在 OpenAPI profile 中收敛",
+      pointer,
+    )
+  }
+  return responses[successCodes[0]] as OpenApiResponse
+}
+
+function selectResponseProjectionConfig(
+  content: Record<string, OpenApiMediaType> | undefined,
+  pointer: string,
+): ResponseProjectionConfig | undefined {
+  if (!content || Object.keys(content).length === 0) {
+    return undefined
+  }
+  const entries = Object.entries(content)
+  if (entries.length > 1) {
+    throw new OpenApiProjectionError(
+      "当前不支持并行多 content-type 主线",
+      pointer,
+    )
+  }
+  const [contentType, mediaType] = entries[0]
+  if (isJsonContentType(contentType)) {
+    return {
+      kind: "json",
+      mediaType,
+      contentType,
+    }
+  }
+  return {
+    kind: "raw",
+    mediaType,
+    contentType: normalizeResponseContentType(contentType),
+  }
+}
+
+function selectRequestBodyProjectionConfig(
+  content: Record<string, OpenApiMediaType> | undefined,
+  pointer: string,
+): RequestBodyProjectionConfig | undefined {
+  if (!content || Object.keys(content).length === 0) {
+    return undefined
+  }
+
+  const entries = Object.entries(content)
+  if (entries.length > 1) {
+    throw new OpenApiProjectionError(
+      "当前不支持并行多 content-type 主线",
+      pointer,
+    )
+  }
+
+  const [contentType, mediaType] = entries[0]
+  const normalized = normalizeRequestContentType(contentType)
+  switch (normalized) {
+    case "json":
+    case "application/json":
+      return {
+        annotation:
+          normalized === "application/json" || normalized === "json"
+            ? "api.body"
+            : "api.raw_body",
+        mediaType,
+        contentType,
+      }
+    case "multipart/form-data":
+    case "application/x-www-form-urlencoded":
+      return {
+        annotation: "api.form",
+        mediaType,
+        contentType: normalized,
+      }
+    default:
+      throw new OpenApiProjectionError(
+        "当前只支持 application/json、multipart/form-data、application/x-www-form-urlencoded 请求体",
+        pointer,
+      )
+  }
+}
+
+function normalizeRequestContentType(contentType: string): string {
+  const normalized = contentType.trim().toLowerCase()
+  return normalized === "json" ? "json" : normalized
+}
+
+function normalizeResponseContentType(contentType: string): string {
+  return contentType.trim().toLowerCase()
+}
+
+function assertFormFileSchemaSupported(
+  schemaOrReference: OpenApiSchema,
+  contentType: string,
+  pointer: string,
+): void {
+  if (
+    contentType !== "multipart/form-data" &&
+    contentType !== "application/x-www-form-urlencoded"
+  ) {
+    return
+  }
+  if (isReference(schemaOrReference)) {
+    return
+  }
+  const schema = normalizeInlineSchema(schemaOrReference, pointer)
+  if (containsBinaryUploadSchema(schema, pointer)) {
+    throw new OpenApiProjectionError(
+      "当前不支持 form/multipart 文件字段（单文件或多文件）自动投影，请改为手写上传接口",
+      pointer,
+    )
+  }
+}
+
+function containsBinaryUploadSchema(
+  schemaOrReference: OpenApiSchema,
+  pointer: string,
+): boolean {
+  if (isReference(schemaOrReference)) {
+    return false
+  }
+  const schema = normalizeInlineSchema(schemaOrReference, pointer)
+  if (schema.type === "string" && schema.format === "binary") {
+    return true
+  }
+  if (schema.type === "array" && schema.items && !isReference(schema.items)) {
+    return containsBinaryUploadSchema(
+      normalizeInlineSchema(schema.items, `${pointer}[]`),
+      `${pointer}[]`,
+    )
+  }
+  if (schema.type === "object" && schema.properties) {
+    for (const [propertyName, propertySchema] of Object.entries(
+      schema.properties,
+    )) {
+      if (isReference(propertySchema)) {
+        continue
+      }
+      if (
+        containsBinaryUploadSchema(
+          normalizeInlineSchema(propertySchema, `${pointer}.${propertyName}`),
+          `${pointer}.${propertyName}`,
+        )
+      ) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+function isJsonContentType(contentType: string): boolean {
+  const normalized = contentType.trim().toLowerCase()
+  return normalized === "json" || normalized.startsWith("application/json")
+}
+
+function buildServiceName(title: string | undefined): string {
+  const base = toPascalCase(title ?? "OpenApi") || "OpenApi"
+  return base.endsWith("Service") ? base : `${base}Service`
+}
+
+function buildMethodName(
+  operationId: string | undefined,
+  httpMethod: string,
+  path: string,
+  routeMethodNames: Record<string, string> | undefined,
+): string {
+  if (operationId) {
+    return toPascalCase(operationId)
+  }
+  const indexedMethodName = routeMethodNames?.[buildRouteKey(httpMethod, path)]
+  if (indexedMethodName) {
+    return toPascalCase(indexedMethodName)
+  }
+  return buildFallbackMethodName(httpMethod, path)
+}
+
+function allocateTypeName(context: ProjectionContext, rawName: string): string {
+  const base = sanitizeTypeName(rawName)
+  let candidate = base
+  let suffix = 2
+  while (context.usedTypeNames.has(candidate)) {
+    candidate = `${base}${suffix}`
+    suffix += 1
+  }
+  context.usedTypeNames.add(candidate)
+  return candidate
+}
+
+function allocateFieldName(
+  usedFieldNames: Set<string>,
+  rawName: string,
+): string {
+  const base = sanitizeFieldName(rawName)
+  let candidate = base
+  let suffix = 2
+  while (usedFieldNames.has(candidate)) {
+    candidate = `${base}_${suffix}`
+    suffix += 1
+  }
+  usedFieldNames.add(candidate)
+  return candidate
+}
+
+function sanitizeTypeName(rawName: string): string {
+  const candidate = toPascalCase(rawName)
+  if (!candidate) {
+    throw new OpenApiProjectionError("无法生成合法的类型名")
+  }
+  return /^\d/.test(candidate) ? `Type${candidate}` : candidate
+}
+
+function sanitizeFieldName(rawName: string): string {
+  const candidate = toSnakeCase(rawName)
+  if (!candidate) {
+    throw new OpenApiProjectionError("无法生成合法的字段名")
+  }
+  return /^\d/.test(candidate) ? `field_${candidate}` : candidate
+}
+
+function assertSchemaSupported(
+  schema: OpenApiSchemaObject,
+  pointer: string,
+): void {
+  const allowManualOverride = allowsUnsupportedValidationOverride(
+    schema,
+    pointer,
+  )
+
+  if (
+    schema.format &&
+    !isSupportedSchemaFormat(schema) &&
+    !allowManualOverride
+  ) {
+    throw new OpenApiProjectionError(
+      `当前不支持 format=${schema.format} 自动投影，请改为手写 validator 或收紧 schema`,
+      pointer,
+    )
+  }
+
+  if (schema.oneOf?.length) {
+    throw new OpenApiProjectionError("当前不支持 oneOf", pointer)
+  }
+  if (schema.anyOf?.length && !isNullableUnion(schema)) {
+    throw new OpenApiProjectionError("当前不支持 anyOf", pointer)
+  }
+  if (schema.allOf?.length) {
+    throw new OpenApiProjectionError("当前不支持 allOf 继承拼装", pointer)
+  }
+  if (
+    typeof schema.pattern === "string" &&
+    schema.pattern.length > 0 &&
+    !allowManualOverride
+  ) {
+    throw new OpenApiProjectionError(
+      "当前不支持 pattern 自动投影，请改为手写 validator",
+      pointer,
+    )
+  }
+  if (typeof schema.multipleOf === "number" && !allowManualOverride) {
+    throw new OpenApiProjectionError(
+      "当前不支持 multipleOf 自动投影，请改为手写 validator",
+      pointer,
+    )
+  }
+  if (schema.exclusiveMinimum !== undefined && !allowManualOverride) {
+    throw new OpenApiProjectionError(
+      "当前不支持 exclusiveMinimum 自动投影，请改为手写 validator",
+      pointer,
+    )
+  }
+  if (schema.exclusiveMaximum !== undefined && !allowManualOverride) {
+    throw new OpenApiProjectionError(
+      "当前不支持 exclusiveMaximum 自动投影，请改为手写 validator",
+      pointer,
+    )
+  }
+  if (schema.uniqueItems && !allowManualOverride) {
+    throw new OpenApiProjectionError(
+      "当前不支持 uniqueItems 自动投影，请改为手写 validator",
+      pointer,
+    )
+  }
+  if (typeof schema.minProperties === "number" && !allowManualOverride) {
+    throw new OpenApiProjectionError(
+      "当前不支持 minProperties 自动投影，请改为手写 validator",
+      pointer,
+    )
+  }
+  if (typeof schema.maxProperties === "number" && !allowManualOverride) {
+    throw new OpenApiProjectionError(
+      "当前不支持 maxProperties 自动投影，请改为手写 validator",
+      pointer,
+    )
+  }
+  if (schema.additionalProperties === false) {
+    throw new OpenApiProjectionError(
+      "当前不支持 additionalProperties: false 自动投影；这需要自定义 binder 或改写 schema，不能通过字段 validator 接管",
+      pointer,
+    )
+  }
+}
+
+function isSupportedSchemaFormat(schema: OpenApiSchemaObject): boolean {
+  if (!schema.format) {
+    return true
+  }
+  switch (schema.type) {
+    case "string":
+      return SUPPORTED_STRING_FORMATS.has(schema.format)
+    case "integer":
+      return SUPPORTED_INTEGER_FORMATS.has(schema.format)
+    case "number":
+      return SUPPORTED_NUMBER_FORMATS.has(schema.format)
+    default:
+      return false
+  }
+}
+
+function allowsUnsupportedValidationOverride(
+  schema: OpenApiSchemaObject,
+  pointer: string,
+): boolean {
+  if (!schema["x-dramawork-allow-unsupported-validation"]) {
+    return false
+  }
+  if (getManualValidators(schema, pointer).length === 0) {
+    throw new OpenApiProjectionError(
+      "x-dramawork-allow-unsupported-validation 需要同时提供 x-dramawork-validate",
+      pointer,
+    )
+  }
+  return true
+}
+
+function looksLikeObjectSchema(schema: OpenApiSchemaObject): boolean {
+  return schema.type === "object" || Boolean(schema.properties)
+}
+
+function getSchemaDescription(
+  schemaOrReference: OpenApiSchema,
+): string | undefined {
+  if (isReference(schemaOrReference)) {
+    return undefined
+  }
+  return schemaOrReference.description
+}
+
+function collectComment(
+  ...values: Array<string | undefined>
+): string[] | undefined {
+  const text = values
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join("\n")
+    .trim()
+  if (!text) {
+    return undefined
+  }
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
+function appendComment(
+  lines: string[],
+  comment: string[] | undefined,
+  indent = "",
+): void {
+  if (!comment) {
+    return
+  }
+  for (const line of comment) {
+    lines.push(`${indent}// ${line}`)
+  }
+}
+
+function renderDefaultValue(value: JsonValue): string | undefined {
+  switch (typeof value) {
+    case "string":
+      return escapeGoTagLiteral(value)
+    case "number":
+    case "boolean":
+      return String(value)
+    default:
+      return undefined
+  }
+}
+
+function escapeGoTagLiteral(value: string): string {
+  return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"')
+}
+
+function safeJsonParse(input: string): OpenApiDocument {
+  try {
+    return JSON.parse(input) as OpenApiDocument
+  } catch (error) {
+    throw new OpenApiProjectionError(
+      error instanceof Error
+        ? `OpenAPI JSON 解析失败: ${error.message}`
+        : "OpenAPI JSON 解析失败",
+    )
+  }
+}
+
+function isReference(value: unknown): value is OpenApiReference {
+  return isObject(value) && typeof value.$ref === "string"
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isNullableUnion(schemaOrReference: OpenApiSchema): boolean {
+  if (isReference(schemaOrReference)) {
+    return false
+  }
+  if (!schemaOrReference.anyOf || schemaOrReference.anyOf.length !== 2) {
+    return false
+  }
+  return schemaOrReference.anyOf.some((item) => isNullSchema(item))
+}
+
+function isNullSchema(schemaOrReference: OpenApiSchema): boolean {
+  return !isReference(schemaOrReference) && schemaOrReference.type === "null"
+}
+
+function unwrapNullableUnion(
+  schemaOrReference: OpenApiSchema,
+  pointer: string,
+): OpenApiSchema {
+  if (!isNullableUnion(schemaOrReference)) {
+    return schemaOrReference
+  }
+  const unionSchema = schemaOrReference as OpenApiSchemaObject
+  const variants = unionSchema.anyOf ?? []
+  const branch = variants.find((item: OpenApiSchema) => !isNullSchema(item))
+  if (!branch) {
+    throw new OpenApiProjectionError("nullable anyOf 缺少非 null 分支", pointer)
+  }
+  return branch
+}
+
+function normalizeInlineSchema(
+  schema: OpenApiSchemaObject,
+  pointer: string,
+): OpenApiSchemaObject {
+  if (!isNullableUnion(schema)) {
+    return schema
+  }
+  const branch = unwrapNullableUnion(schema, pointer)
+  if (isReference(branch)) {
+    throw new OpenApiProjectionError(
+      "当前不支持 nullable anyOf 的 inline $ref 分支",
+      pointer,
+    )
+  }
+  return {
+    ...branch,
+    nullable: true,
+  }
+}
+
+function buildFallbackMethodName(httpMethod: string, path: string): string {
+  const normalized = normalizeRoutePath(path)
+  const segments = normalized
+    .split("/")
+    .filter(Boolean)
+    .filter((segment) => segment !== "api" && !/^v\d+$/.test(segment))
+    .map((segment) => segment.replace(/^:/, "by-"))
+  const suffix = segments.map((segment) => toPascalCase(segment)).join("")
+  return `${toPascalCase(httpMethod)}${suffix || "Operation"}`
+}
+
+function toPascalCase(value: string): string {
+  return value
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join("")
+}
+
+function toSnakeCase(value: string): string {
+  return value
+    .replaceAll(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .split(/[^A-Za-z0-9]+/)
+    .filter(Boolean)
+    .join("_")
+    .replaceAll(/_{2,}/g, "_")
+    .toLowerCase()
+}
