@@ -1,4 +1,4 @@
-# openapi-thrift TODO
+# OpenAPI Render TODO
 
 > Active-only tracker. Completed notes belong in `docs/releases/unreleased/` or stable docs.
 

@@ -7,6 +7,19 @@ export type {
   ThriftServiceMethod,
   ThriftStruct,
 } from "./model.js"
+export type {
+  OpenApiRenderIssueSeverity,
+  OpenApiRenderProfile,
+  OpenApiRenderValidationIssue,
+  OpenApiRenderValidationOptions,
+  OpenApiRenderValidationResult,
+} from "./profile.js"
+export {
+  assertOpenApiRenderDocument,
+  formatOpenApiRenderValidationIssues,
+  OpenApiRenderValidationError,
+  validateOpenApiRenderDocument,
+} from "./profile.js"
 export {
   convertOpenApiToThrift,
   OpenApiProjectionError,

@@ -5,7 +5,7 @@
 ## 判定规则
 
 - `APIFox 可导出` 只表示当前 UI 路径下，最终 `OpenAPI export` 中出现了对应结构。
-- `converter 可支持` 只表示 `openapi-thrift` 当前可以稳定投影到 Thrift。
+- `converter 可支持` 只表示 OpenAPI Render 当前可以稳定投影到 Thrift。
 - `纳入 profile` 表示允许进入主线；`禁止项` 表示必须在 APIFox 侧改写，或升级统一 binder / codegen 后再谈。
 
 ## 矩阵

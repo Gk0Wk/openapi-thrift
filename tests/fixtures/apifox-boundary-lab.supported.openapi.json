@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "DramaWork OpenAPI Thrift Boundary Lab Supported Subset",
-    "description": "Derived from the live APIFox boundary export. Keeps only the routes that are currently within the supported openapi-thrift profile.",
+    "description": "Derived from the live APIFox boundary export. Keeps only the routes that are currently within the supported OpenAPI Render profile.",
     "version": "0.1.0"
   },
   "tags": [],

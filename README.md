@@ -1,37 +1,38 @@
 <div align="center">
 
-# `@sttot/openapi-thrift`
+# `@sttot/openapi-render`
 
-受限 profile 的 `OpenAPI 3.0 JSON -> Thrift IDL` 投影器，面向 APIFox / OpenAPI 到 CloudWeGo `hz` / `kitex` 的工程链路。
+受限 profile 的 OpenAPI 校验与渲染工具，面向中央 OpenAPI YAML 单向生成 APIFox、CloudWeGo `hz` / `kitex` Thrift IDL，以及前端 API client 的工程链路。
 
-[![CI](https://github.com/Gk0Wk/openapi-thrift/actions/workflows/openapi-thrift-ci.yml/badge.svg)](https://github.com/Gk0Wk/openapi-thrift/actions/workflows/openapi-thrift-ci.yml)
-[![npm version](https://img.shields.io/npm/v/%40sttot%2Fopenapi-thrift)](https://www.npmjs.com/package/@sttot/openapi-thrift)
-[![npm downloads](https://img.shields.io/npm/dm/%40sttot%2Fopenapi-thrift?label=downloads)](https://www.npmjs.com/package/@sttot/openapi-thrift)
-[![license](https://img.shields.io/github/license/Gk0Wk/openapi-thrift)](https://github.com/Gk0Wk/openapi-thrift/blob/main/LICENSE)
-[![node](https://img.shields.io/badge/node-%3E%3D20-5fa04e?logo=nodedotjs&logoColor=white)](https://www.npmjs.com/package/@sttot/openapi-thrift)
-[![GitHub stars](https://img.shields.io/github/stars/Gk0Wk/openapi-thrift?style=social)](https://github.com/Gk0Wk/openapi-thrift/stargazers)
+[![CI](https://github.com/Gk0Wk/openapi-render/actions/workflows/openapi-render-ci.yml/badge.svg)](https://github.com/Gk0Wk/openapi-render/actions/workflows/openapi-render-ci.yml)
+[![npm version](https://img.shields.io/npm/v/%40sttot%2Fopenapi-render)](https://www.npmjs.com/package/@sttot/openapi-render)
+[![npm downloads](https://img.shields.io/npm/dm/%40sttot%2Fopenapi-render?label=downloads)](https://www.npmjs.com/package/@sttot/openapi-render)
+[![license](https://img.shields.io/github/license/Gk0Wk/openapi-render)](https://github.com/Gk0Wk/openapi-render/blob/main/LICENSE)
+[![node](https://img.shields.io/badge/node-%3E%3D22-5fa04e?logo=nodedotjs&logoColor=white)](https://www.npmjs.com/package/@sttot/openapi-render)
+[![GitHub stars](https://img.shields.io/github/stars/Gk0Wk/openapi-render?style=social)](https://github.com/Gk0Wk/openapi-render/stargazers)
 
 </div>
 
-它不是通用 OpenAPI codegen，也不会默默降级 unsupported schema；定位就是一个对受限 OpenAPI profile 做显式、可审计、fail-fast 的 Thrift 文本投影器。
+它不是通用 OpenAPI codegen，也不会默默降级 unsupported schema；定位是一个对受限 OpenAPI profile 做显式、可审计、fail-fast 的校验和渲染入口。`openapi-thrift` CLI 名称仍保留为旧 Hz bootstrap 的别名，新命令面统一叫 `openapi-render`。
 
 ## 为什么用它
 
-- 只接受已冻结的 OpenAPI profile，不做“看起来能转、实际上丢语义”的静默兼容
-- 对 unsupported 能力默认 fail-fast，避免把非法契约带进 `hz` / `kitex`
+- 只接受已冻结的 OpenAPI Render profile，不做“看起来能转、实际上丢语义”的静默兼容
+- 在 APIFox 渲染、Thrift IDL 投影、前端 API 生成前统一校验同一份 OpenAPI
+- 对 unsupported 能力默认 fail-fast，避免把非法契约带进 APIFox、`hz` / `kitex` 或前端 client
 - 纯 TypeScript 实现，同一套逻辑可在浏览器、Node CLI、CI 中复用
-- 默认输出 `.thrift` 文本，便于继续接 `hz update`、`kitex`、模板化生成链路
+- 当前内置 Thrift IDL 输出，便于继续接 `hz update`、`kitex`、模板化生成链路
 
 ## 安装
 
 ```bash
-npm install @sttot/openapi-thrift
+npm install @sttot/openapi-render
 ```
 
 或：
 
 ```bash
-pnpm add @sttot/openapi-thrift
+pnpm add @sttot/openapi-render
 ```
 
 ## 目标
@@ -39,7 +40,16 @@ pnpm add @sttot/openapi-thrift
 - 只支持 DramaWork 已冻结的 OpenAPI profile
 - 不做“万能转换器”
 - 核心逻辑保持纯 TypeScript，便于浏览器和 CLI 复用
-- 第一版只输出 `.thrift` 文本，不直接调用 `hz` 或 `kitex`
+- 第一版内置 APIFox/HZ-Thrift profile 校验和 `.thrift` 文本输出，不直接调用 `hz`、`kitex`、APIFox 或前端生成器
+
+## OpenAPI Render profile
+
+`validate` 子命令执行 `apifox-hz-thrift` profile，当前覆盖：
+
+- APIFox 作者侧规则：`requestBody.examples` / `schema.example(s)` / parameter example 的类型一致性，字段级 `x-apifox-mock` 非空表达式，`mockScript` 非空且提示人工复核，JSON request body 必须使用 `application/json` 而不是 APIFox 导出风险较高的 `json` 简写。
+- 数据模型引用规则：schema `$ref` 只允许 `#/components/schemas/*`，requestBody `$ref` 只允许 `#/components/requestBodies/*`，response `$ref` 只允许 `#/components/responses/*`，parameter `$ref` 会被判定为 Hz/Thrift 不可投影。
+- Auth 规则：`securitySchemes` 只能使用标准 `apiKey/http/oauth2/openIdConnect`，operation/root `security` 必须引用已声明 scheme；公开接口使用 `security: []`。
+- Hz/Thrift 可表达范围：复用下方 “当前支持 / 当前不支持” 的受限投影规则，并在校验阶段额外执行一次真实 Thrift 投影探针。
 
 ## 当前支持
 
@@ -130,7 +140,7 @@ pnpm add @sttot/openapi-thrift
 
 当前 APIFox 真实导出、converter 支持面和 profile 结论见：
 
-- <https://github.com/sttot/openapi-thrift/blob/main/apifox_boundary_matrix_2026-04-13.md>
+- <https://github.com/sttot/openapi-render/blob/main/apifox_boundary_matrix_2026-04-13.md>
 
 当前还额外固化了两份 APIFox 真实导出 followup fixture：
 
@@ -152,13 +162,23 @@ pnpm --dir standard/openapi-thrift build
 如果从 npm 安装，建议直接用 `npx`：
 
 ```bash
-npx @sttot/openapi-thrift --input ./project.openapi.json --output ./idl/project.thrift
+npx @sttot/openapi-render validate --input ./project.openapi.json
+npx @sttot/openapi-render thrift --input ./project.openapi.json --output ./idl/project.thrift
 ```
 
 再运行 CLI：
 
 ```bash
 node standard/openapi-thrift/dist/cli.js \
+  validate \
+  --input ./project.openapi.json
+```
+
+生成 Thrift：
+
+```bash
+node standard/openapi-thrift/dist/cli.js \
+  thrift \
   --input ./project.openapi.json \
   --namespace dramawork.project \
   --service-name ProjectService
@@ -168,6 +188,7 @@ node standard/openapi-thrift/dist/cli.js \
 
 ```bash
 node standard/openapi-thrift/dist/cli.js \
+  thrift \
   --input ./project.openapi.json \
   --idl-dir D:/Developer/JobSeek/tutoring-demand/idl \
   --output ./idl/project.thrift
@@ -177,6 +198,7 @@ node standard/openapi-thrift/dist/cli.js \
 
 ```bash
 node standard/openapi-thrift/dist/cli.js \
+  thrift \
   --input ./project.openapi.json \
   --output ./idl/project.thrift
 ```
@@ -184,7 +206,12 @@ node standard/openapi-thrift/dist/cli.js \
 以库方式调用：
 
 ```ts
-import { convertOpenApiToThrift } from "@sttot/openapi-thrift"
+import {
+  assertOpenApiRenderDocument,
+  convertOpenApiToThrift,
+} from "@sttot/openapi-render"
+
+assertOpenApiRenderDocument(openApiDocument)
 
 const result = convertOpenApiToThrift(openApiDocument, {
   namespace: "dramawork.project",

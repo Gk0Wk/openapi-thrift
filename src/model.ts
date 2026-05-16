@@ -13,9 +13,13 @@ export interface OpenApiDocument {
     description?: string
   }
   paths?: Record<string, OpenApiPathItem>
+  security?: OpenApiSecurityRequirement[]
   components?: {
     schemas?: Record<string, OpenApiSchema>
     requestBodies?: Record<string, OpenApiRequestBody>
+    responses?: Record<string, OpenApiResponse>
+    parameters?: Record<string, OpenApiParameter>
+    securitySchemes?: Record<string, OpenApiSecurityScheme>
   }
 }
 
@@ -34,9 +38,11 @@ export interface OpenApiOperation {
   operationId?: string
   summary?: string
   description?: string
+  tags?: string[]
   parameters?: OpenApiParameterOrReference[]
   requestBody?: OpenApiRequestBody | OpenApiReference
   responses?: Record<string, OpenApiResponse>
+  security?: OpenApiSecurityRequirement[]
 }
 
 export interface OpenApiParameter {
@@ -64,6 +70,15 @@ export interface OpenApiResponse {
 
 export interface OpenApiMediaType {
   schema?: OpenApiSchema
+  example?: JsonValue
+  examples?: Record<string, OpenApiExample | OpenApiReference>
+}
+
+export interface OpenApiExample {
+  summary?: string
+  description?: string
+  value?: JsonValue
+  externalValue?: string
 }
 
 export interface OpenApiReference {
@@ -74,6 +89,8 @@ export interface OpenApiSchemaObject {
   type?: string
   format?: string
   description?: string
+  example?: JsonValue
+  examples?: JsonValue[]
   nullable?: boolean
   default?: JsonValue
   minimum?: number
@@ -99,9 +116,23 @@ export interface OpenApiSchemaObject {
   allOf?: OpenApiSchema[]
   "x-dramawork-validate"?: string | string[]
   "x-dramawork-allow-unsupported-validation"?: boolean
+  "x-apifox-mock"?: string
+  mockScript?: string
 }
 
 export type OpenApiSchema = OpenApiSchemaObject | OpenApiReference
+
+export type OpenApiSecurityRequirement = Record<string, string[]>
+
+export interface OpenApiSecurityScheme {
+  type?: string
+  name?: string
+  in?: string
+  scheme?: string
+  bearerFormat?: string
+  flows?: Record<string, unknown>
+  openIdConnectUrl?: string
+}
 
 export interface ProjectionOptions {
   namespace?: string

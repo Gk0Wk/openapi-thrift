@@ -1,17 +1,17 @@
 {
-  "name": "@sttot/openapi-thrift",
+  "name": "@sttot/openapi-render",
   "version": "0.1.0",
-  "description": "Restricted OpenAPI 3.0 JSON to Thrift IDL projector for APIFox/OpenAPI to CloudWeGo workflows.",
+  "description": "OpenAPI validation and rendering toolkit for APIFox, CloudWeGo Hz/Thrift, and frontend API generation workflows.",
   "packageManager": "pnpm@10.14.0",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://github.com/Gk0Wk/openapi-thrift#readme",
+  "homepage": "https://github.com/Gk0Wk/openapi-render#readme",
   "bugs": {
-    "url": "https://github.com/Gk0Wk/openapi-thrift/issues"
+    "url": "https://github.com/Gk0Wk/openapi-render/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Gk0Wk/openapi-thrift.git"
+    "url": "git+https://github.com/Gk0Wk/openapi-render.git"
   },
   "keywords": [
     "openapi",
@@ -36,6 +36,7 @@
   },
   "sideEffects": false,
   "bin": {
+    "openapi-render": "dist/cli.js",
     "openapi-thrift": "dist/cli.js"
   },
   "types": "./dist/index.d.ts",

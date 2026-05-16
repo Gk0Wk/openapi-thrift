@@ -7,6 +7,7 @@ import {
   convertOpenApiToThrift,
   extractRouteMethodNameMapFromThriftSources,
   OpenApiProjectionError,
+  validateOpenApiRenderDocument,
 } from "../dist/index.js"
 
 function loadFixtureDocument(name) {
@@ -18,6 +19,143 @@ function loadFixtureDocument(name) {
 function loadFixtureText(name) {
   return fs.readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8")
 }
+
+test("validates the combined APIFox and Hz/Thrift OpenAPI Render profile", () => {
+  const document = {
+    openapi: "3.1.0",
+    info: {
+      title: "Project API",
+    },
+    paths: {
+      "/api/v1/projects/{project_id}": {
+        get: {
+          operationId: "getProject",
+          tags: ["Projects"],
+          parameters: [
+            {
+              name: "project_id",
+              in: "path",
+              required: true,
+              example: "01KPROJECT",
+              schema: { type: "string", "x-apifox-mock": "@id" },
+            },
+          ],
+          responses: {
+            200: {
+              description: "Project detail",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/Project" },
+                  examples: {
+                    default: {
+                      value: {
+                        id: "01KPROJECT",
+                        title: "Demo project",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    components: {
+      securitySchemes: {
+        sessionCookie: {
+          type: "apiKey",
+          in: "cookie",
+          name: "ispark_session",
+        },
+      },
+      schemas: {
+        Project: {
+          type: "object",
+          properties: {
+            id: { type: "string", example: "01KPROJECT" },
+            title: { type: "string", example: "Demo project" },
+          },
+        },
+      },
+    },
+  }
+
+  const result = validateOpenApiRenderDocument(document)
+
+  assert.equal(result.errorCount, 0)
+  assert.equal(result.warningCount, 0)
+  assert.equal(result.operationCount, 1)
+})
+
+test("reports APIFox and Hz/Thrift profile violations together", () => {
+  const document = {
+    openapi: "3.1.0",
+    info: {
+      title: "Bad API",
+    },
+    security: [{ missingAuth: [] }],
+    paths: {
+      "/api/v1/search": {
+        get: {
+          operationId: "search",
+          tags: ["Search"],
+          parameters: [
+            {
+              name: "filter",
+              in: "query",
+              content: {
+                "application/json": {
+                  schema: { type: "object" },
+                },
+              },
+              schema: { type: "string" },
+            },
+          ],
+          requestBody: {
+            content: {
+              json: {
+                schema: { type: "string" },
+                example: { value: "wrapped scalar" },
+              },
+            },
+          },
+          responses: {
+            200: {
+              description: "ok",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      ok: { type: "boolean" },
+                    },
+                  },
+                  example: {
+                    ok: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }
+
+  const result = validateOpenApiRenderDocument(document, {
+    validateProjection: false,
+  })
+  const codes = new Set(result.issues.map((issue) => issue.code))
+
+  assert.equal(result.errorCount, 6)
+  assert.ok(codes.has("auth.requirement.unresolved"))
+  assert.ok(codes.has("hz.parameter_content.unsupported"))
+  assert.ok(codes.has("hz.request_body.method"))
+  assert.ok(codes.has("hz.request_body.content_type"))
+  assert.ok(codes.has("apifox.request_body.json_alias"))
+  assert.ok(codes.has("apifox.example.schema_mismatch"))
+})
 
 test("projects the constrained OpenAPI profile into thrift", () => {
   const document = {

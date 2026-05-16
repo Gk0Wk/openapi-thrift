@@ -15,14 +15,16 @@ const allowedFiles = new Set([
   "dist/index.js",
   "dist/model.d.ts",
   "dist/model.js",
+  "dist/profile.d.ts",
+  "dist/profile.js",
   "dist/projector.d.ts",
   "dist/projector.js",
   "dist/thrift-route-index.d.ts",
   "dist/thrift-route-index.js",
 ])
 
-const maxCompressedSizeBytes = 20_000
-const maxUnpackedSizeBytes = 80_000
+const maxCompressedSizeBytes = 30_000
+const maxUnpackedSizeBytes = 120_000
 const packageRoot = fileURLToPath(new URL("..", import.meta.url))
 
 async function main() {
@@ -40,7 +42,7 @@ async function main() {
   assert.equal(report.length, 1, "npm pack --dry-run 应只返回一个 tarball 条目")
 
   const [entry] = report
-  assert.equal(entry.name, "@sttot/openapi-thrift", "包名与预期不一致")
+  assert.equal(entry.name, "@sttot/openapi-render", "包名与预期不一致")
   assert.ok(
     entry.size <= maxCompressedSizeBytes,
     `压缩包体过大: ${entry.size} bytes > ${maxCompressedSizeBytes} bytes`,
