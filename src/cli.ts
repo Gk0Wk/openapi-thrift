@@ -126,7 +126,7 @@ function parseArgs(argv: string[]): CliOptions {
 }
 
 function printUsage(): void {
-  process.stdout.write(`@sttot/openapi-render
+  process.stdout.write(`@sttot/openapi-thrift
 
 Usage:
   node dist/cli.js validate --input <openapi.json> [--strict-warnings]

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { execFile as execFileCallback } from "node:child_process"
+import { readFile } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
 
@@ -26,8 +27,35 @@ const allowedFiles = new Set([
 const maxCompressedSizeBytes = 30_000
 const maxUnpackedSizeBytes = 120_000
 const packageRoot = fileURLToPath(new URL("..", import.meta.url))
+const packageManifestPath = fileURLToPath(new URL("../package.json", import.meta.url))
+const cliPath = fileURLToPath(new URL("../dist/cli.js", import.meta.url))
 
 async function main() {
+  const packageManifest = JSON.parse(await readFile(packageManifestPath, "utf8"))
+  assert.equal(packageManifest.name, "@sttot/openapi-thrift", "package.json 包名与 canonical 名称不一致")
+  assert.equal(
+    packageManifest.homepage,
+    "https://github.com/Gk0Wk/openapi-thrift#readme",
+    "package.json homepage 与 canonical 仓库不一致",
+  )
+  assert.deepEqual(packageManifest.repository, {
+    type: "git",
+    url: "git+https://github.com/Gk0Wk/openapi-thrift.git",
+  })
+  assert.equal(
+    packageManifest.bugs?.url,
+    "https://github.com/Gk0Wk/openapi-thrift/issues",
+    "package.json bugs URL 与 canonical 仓库不一致",
+  )
+  assert.equal(packageManifest.bin?.["openapi-thrift"], "dist/cli.js")
+  assert.equal(packageManifest.bin?.["openapi-render"], "dist/cli.js")
+
+  const { stdout: helpOutput } = await execFile(process.execPath, [cliPath, "--help"], {
+    cwd: packageRoot,
+  })
+  assert.match(helpOutput, /^@sttot\/openapi-thrift$/m)
+  assert.doesNotMatch(helpOutput, /^@sttot\/openapi-render$/m)
+
   const { stdout } =
     process.platform === "win32"
       ? await execFile(
@@ -42,7 +70,7 @@ async function main() {
   assert.equal(report.length, 1, "npm pack --dry-run 应只返回一个 tarball 条目")
 
   const [entry] = report
-  assert.equal(entry.name, "@sttot/openapi-render", "包名与预期不一致")
+  assert.equal(entry.name, "@sttot/openapi-thrift", "包名与预期不一致")
   assert.ok(
     entry.size <= maxCompressedSizeBytes,
     `压缩包体过大: ${entry.size} bytes > ${maxCompressedSizeBytes} bytes`,

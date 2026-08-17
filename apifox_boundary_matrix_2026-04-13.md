@@ -1,6 +1,6 @@
 # APIFox 边界矩阵（2026-04-13）
 
-这份矩阵基于 APIFox 项目 `DramaWork OpenAPI Thrift Boundary Lab` 的真实导出文件 [apifox-boundary-lab.export.openapi.json](D:/Developer/Project/DramaWork/standard/openapi-thrift/tests/fixtures/apifox-boundary-lab.export.openapi.json)。
+这份矩阵基于 APIFox 项目 `DramaWork OpenAPI Thrift Boundary Lab` 的真实导出文件 [apifox-boundary-lab.export.openapi.json](tests/fixtures/apifox-boundary-lab.export.openapi.json)。
 
 ## 判定规则
 
@@ -33,8 +33,8 @@
 
 已从真实导出裁出一份“当前支持能力子集”：
 
-- OpenAPI fixture: [apifox-boundary-lab.supported.openapi.json](D:/Developer/Project/DramaWork/standard/openapi-thrift/tests/fixtures/apifox-boundary-lab.supported.openapi.json)
-- 期望 Thrift 输出: [apifox-boundary-lab.supported.thrift](D:/Developer/Project/DramaWork/standard/openapi-thrift/tests/fixtures/apifox-boundary-lab.supported.thrift)
+- OpenAPI fixture: [apifox-boundary-lab.supported.openapi.json](tests/fixtures/apifox-boundary-lab.supported.openapi.json)
+- 期望 Thrift 输出: [apifox-boundary-lab.supported.thrift](tests/fixtures/apifox-boundary-lab.supported.thrift)
 
 这份子集目前覆盖：
 
@@ -50,8 +50,8 @@
 
 已额外固化一份 followup APIFox 真实导出：
 
-- [apifox-boundary-lab.followup.export.openapi.json](D:/Developer/Project/DramaWork/standard/openapi-thrift/tests/fixtures/apifox-boundary-lab.followup.export.openapi.json)
-- [apifox-boundary-lab.header-cookie.export.openapi.json](D:/Developer/Project/DramaWork/standard/openapi-thrift/tests/fixtures/apifox-boundary-lab.header-cookie.export.openapi.json)
+- [apifox-boundary-lab.followup.export.openapi.json](tests/fixtures/apifox-boundary-lab.followup.export.openapi.json)
+- [apifox-boundary-lab.header-cookie.export.openapi.json](tests/fixtures/apifox-boundary-lab.header-cookie.export.openapi.json)
 
 它们确认了三件事：
 

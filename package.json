@@ -1,17 +1,17 @@
 {
-  "name": "@sttot/openapi-render",
-  "version": "0.1.0",
+  "name": "@sttot/openapi-thrift",
+  "version": "0.1.1",
   "description": "OpenAPI validation and rendering toolkit for APIFox, CloudWeGo Hz/Thrift, and frontend API generation workflows.",
   "packageManager": "pnpm@10.14.0",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://github.com/Gk0Wk/openapi-render#readme",
+  "homepage": "https://github.com/Gk0Wk/openapi-thrift#readme",
   "bugs": {
-    "url": "https://github.com/Gk0Wk/openapi-render/issues"
+    "url": "https://github.com/Gk0Wk/openapi-thrift/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Gk0Wk/openapi-render.git"
+    "url": "git+https://github.com/Gk0Wk/openapi-thrift.git"
   },
   "keywords": [
     "openapi",
@@ -36,8 +36,8 @@
   },
   "sideEffects": false,
   "bin": {
-    "openapi-render": "dist/cli.js",
-    "openapi-thrift": "dist/cli.js"
+    "openapi-thrift": "dist/cli.js",
+    "openapi-render": "dist/cli.js"
   },
   "types": "./dist/index.d.ts",
   "exports": {
