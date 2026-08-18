@@ -162,8 +162,8 @@ pnpm --dir standard/openapi-thrift build
 如果从 npm 安装，建议直接用 `npx`：
 
 ```bash
-npx @sttot/openapi-thrift validate --input ./project.openapi.json
-npx @sttot/openapi-thrift thrift --input ./project.openapi.json --output ./idl/project.thrift
+npx @sttot/openapi-thrift@0.1.1 validate --input ./project.openapi.json
+npx @sttot/openapi-thrift@0.1.1 thrift --input ./project.openapi.json --output ./idl/project.thrift
 ```
 
 再运行 CLI：
