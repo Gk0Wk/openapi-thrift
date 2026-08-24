@@ -23,6 +23,20 @@
 - 纯 TypeScript 实现，同一套逻辑可在浏览器、Node CLI、CI 中复用
 - 当前内置 Thrift IDL 输出，便于继续接 `hz update`、`kitex`、模板化生成链路
 
+## 它在标准工程链中的位置
+
+这是三仓链路的最前置校验层，不负责生成完整后端或前端应用：
+
+```text
+OpenAPI / Apifox export
+  -> openapi-thrift validate
+  -> openapi-thrift thrift
+  -> standard/backend 的 hz/kitex codegen
+  -> 真实前端项目的 Orval client/types
+```
+
+因此，修改 profile、投影规则或 unsupported 列表前，必须评估后端 Thrift、前端生成和现有 fixture 的影响；不要在后端或前端用兼容代码掩盖这里的契约失败。
+
 ## 安装
 
 ```bash
@@ -202,6 +216,8 @@ node standard/openapi-thrift/dist/cli.js \
   --input ./project.openapi.json \
   --output ./idl/project.thrift
 ```
+
+推荐的实际顺序是先 `validate`，再 `thrift`，最后进入后端 `cloudwego-codegen`。`thrift` 成功只代表当前 profile 可以投影，不代表 Hz/Kitex、业务实现或前端 API client 已经验证完成；后续必须分别运行对应仓库的 drift-check、构建和测试。
 
 以库方式调用：
 
