@@ -19,4 +19,4 @@ artifacts: src/model.ts, src/profile.ts, src/projector.ts, tests/projector.test.
 
 ## Demo posture / limitations
 
-backend 模板和 vendored fixture 已同步；npm `0.2.0` 尚未发布，因此当前不能把远端安装作为可用性证明，也不能推送依赖该版本的 backend 收尾提交。
+backend 模板和 vendored fixture 已同步；npm `0.2.0` 已发布，并由 backend 通过固定依赖安装和完整生成链回归验证。
