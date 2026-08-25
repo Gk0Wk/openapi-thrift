@@ -1020,7 +1020,19 @@ function getManualValidators(
   schema: OpenApiSchemaObject,
   pointer: string,
 ): string[] {
-  const raw = schema["x-dramawork-validate"]
+  const canonical = schema["x-ispark-validate"]
+  const legacy = schema["x-dramawork-validate"]
+  if (
+    canonical !== undefined &&
+    legacy !== undefined &&
+    JSON.stringify(canonical) !== JSON.stringify(legacy)
+  ) {
+    throw new OpenApiProjectionError(
+      "x-ispark-validate 与已弃用的 x-dramawork-validate 必须保持一致",
+      pointer,
+    )
+  }
+  const raw = canonical ?? legacy
   if (raw === undefined) {
     return []
   }
@@ -1028,7 +1040,7 @@ function getManualValidators(
     const value = raw.trim()
     if (!value) {
       throw new OpenApiProjectionError(
-        "x-dramawork-validate 不能为空字符串",
+        "x-ispark-validate 不能为空字符串",
         pointer,
       )
     }
@@ -1039,7 +1051,7 @@ function getManualValidators(
       .map((item) => {
         if (typeof item !== "string") {
           throw new OpenApiProjectionError(
-            "x-dramawork-validate 数组只能包含字符串",
+            "x-ispark-validate 数组只能包含字符串",
             pointer,
           )
         }
@@ -1048,14 +1060,14 @@ function getManualValidators(
       .filter(Boolean)
     if (values.length === 0) {
       throw new OpenApiProjectionError(
-        "x-dramawork-validate 数组不能为空",
+        "x-ispark-validate 数组不能为空",
         pointer,
       )
     }
     return values
   }
   throw new OpenApiProjectionError(
-    "x-dramawork-validate 只支持 string 或 string[]",
+    "x-ispark-validate 只支持 string 或 string[]",
     pointer,
   )
 }
@@ -1475,12 +1487,20 @@ function allowsUnsupportedValidationOverride(
   schema: OpenApiSchemaObject,
   pointer: string,
 ): boolean {
-  if (!schema["x-dramawork-allow-unsupported-validation"]) {
+  const canonical = schema["x-ispark-allow-unsupported-validation"]
+  const legacy = schema["x-dramawork-allow-unsupported-validation"]
+  if (canonical !== undefined && legacy !== undefined && canonical !== legacy) {
+    throw new OpenApiProjectionError(
+      "x-ispark-allow-unsupported-validation 与已弃用的 x-dramawork-allow-unsupported-validation 必须保持一致",
+      pointer,
+    )
+  }
+  if (!(canonical ?? legacy ?? false)) {
     return false
   }
   if (getManualValidators(schema, pointer).length === 0) {
     throw new OpenApiProjectionError(
-      "x-dramawork-allow-unsupported-validation 需要同时提供 x-dramawork-validate",
+      "x-ispark-allow-unsupported-validation 需要同时提供 x-ispark-validate",
       pointer,
     )
   }

@@ -26,6 +26,7 @@ OpenAPI 是输入事实源，Thrift 是派生物。任何 profile 或投影变�
 - 不支持的 schema 必须 fail-fast；不要在下游通过宽松类型、字符串拼接或默认值猜测恢复语义。
 - 保持 CLI `openapi-thrift` 为 canonical 名称，`openapi-render` 只作为兼容别名。
 - 使用固定版本，禁止文档和脚本引用 `latest`。
+- `x-ispark-*` 是当前 canonical vendor extension；`x-dramawork-*` 仅作兼容读取并产生弃用 warning。双写时值必须一致，冲突必须 fail-fast。
 
 ```bash
 pnpm install --frozen-lockfile

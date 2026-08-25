@@ -1700,8 +1700,8 @@ test("does not allow manual validator override for additionalProperties false", 
                       properties: {
                         name: { type: "string" },
                       },
-                      "x-dramawork-allow-unsupported-validation": true,
-                      "x-dramawork-validate": "strict_object",
+                      "x-ispark-allow-unsupported-validation": true,
+                      "x-ispark-validate": "strict_object",
                     },
                   },
                 },
@@ -1753,14 +1753,14 @@ test("allows explicit manual validator override for unsupported keywords", () =>
                     phone: {
                       type: "string",
                       pattern: "^1\\d{10}$",
-                      "x-dramawork-allow-unsupported-validation": true,
-                      "x-dramawork-validate": "cn_mobile",
+                      "x-ispark-allow-unsupported-validation": true,
+                      "x-ispark-validate": "cn_mobile",
                     },
                     score: {
                       type: "number",
                       multipleOf: 0.5,
-                      "x-dramawork-allow-unsupported-validation": true,
-                      "x-dramawork-validate": ["half_step", "gte=0"],
+                      "x-ispark-allow-unsupported-validation": true,
+                      "x-ispark-validate": ["half_step", "gte=0"],
                     },
                   },
                 },
@@ -1816,7 +1816,7 @@ test("fails when unsupported override flag has no manual validators", () => {
                     phone: {
                       type: "string",
                       pattern: "^1\\d{10}$",
-                      "x-dramawork-allow-unsupported-validation": true,
+                      "x-ispark-allow-unsupported-validation": true,
                     },
                   },
                 },
@@ -1848,7 +1848,121 @@ test("fails when unsupported override flag has no manual validators", () => {
     (error) =>
       error instanceof OpenApiProjectionError &&
       error.message.includes(
-        "x-dramawork-allow-unsupported-validation 需要同时提供 x-dramawork-validate",
+        "x-ispark-allow-unsupported-validation 需要同时提供 x-ispark-validate",
+      ),
+  )
+})
+
+function createManualOverrideDocument(schema) {
+  return {
+    openapi: "3.0.3",
+    info: { title: "Manual Override Compatibility API" },
+    paths: {
+      "/api/v1/manual": {
+        post: {
+          operationId: "ManualOverrideCompatibilityOperation",
+          requestBody: {
+            content: {
+              "application/json": { schema },
+            },
+          },
+          responses: {
+            200: {
+              description: "ok",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: { ok: { type: "boolean" } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }
+}
+
+test("accepts deprecated dramawork manual validator extensions with warnings", () => {
+  const document = createManualOverrideDocument({
+    type: "object",
+    properties: {
+      phone: {
+        type: "string",
+        pattern: "^1\\d{10}$",
+        "x-dramawork-allow-unsupported-validation": true,
+        "x-dramawork-validate": "cn_mobile",
+      },
+    },
+  })
+
+  const validation = validateOpenApiRenderDocument(document)
+  assert.equal(validation.errorCount, 0)
+  assert.ok(
+    validation.issues.some(
+      (issue) => issue.code === "hz.schema.legacy_manual_override",
+    ),
+  )
+  assert.ok(
+    validation.issues.some(
+      (issue) => issue.code === "hz.schema.legacy_manual_validator",
+    ),
+  )
+  assert.match(convertOpenApiToThrift(document).thrift, /validate:"cn_mobile"/)
+})
+
+test("rejects conflicting canonical and deprecated manual validator extensions", () => {
+  const document = createManualOverrideDocument({
+    type: "string",
+    pattern: "^1\\d{10}$",
+    "x-ispark-allow-unsupported-validation": true,
+    "x-ispark-validate": "cn_mobile",
+    "x-dramawork-allow-unsupported-validation": true,
+    "x-dramawork-validate": "legacy_rule",
+  })
+
+  const validation = validateOpenApiRenderDocument(document)
+  assert.ok(
+    validation.issues.some(
+      (issue) => issue.code === "hz.schema.manual_validator_conflict",
+    ),
+  )
+  assert.ok(validation.errorCount > 0)
+  assert.throws(
+    () => convertOpenApiToThrift(document),
+    (error) =>
+      error instanceof OpenApiProjectionError &&
+      error.message.includes(
+        "x-ispark-validate 与已弃用的 x-dramawork-validate",
+      ),
+  )
+})
+
+test("rejects conflicting canonical and deprecated override flags", () => {
+  const document = createManualOverrideDocument({
+    type: "string",
+    pattern: "^1\\d{10}$",
+    "x-ispark-allow-unsupported-validation": true,
+    "x-ispark-validate": "cn_mobile",
+    "x-dramawork-allow-unsupported-validation": false,
+    "x-dramawork-validate": "cn_mobile",
+  })
+
+  const validation = validateOpenApiRenderDocument(document)
+  assert.ok(
+    validation.issues.some(
+      (issue) => issue.code === "hz.schema.manual_override_conflict",
+    ),
+  )
+  assert.ok(validation.errorCount > 0)
+  assert.throws(
+    () => convertOpenApiToThrift(document),
+    (error) =>
+      error instanceof OpenApiProjectionError &&
+      error.message.includes(
+        "x-ispark-allow-unsupported-validation 与已弃用的",
       ),
   )
 })

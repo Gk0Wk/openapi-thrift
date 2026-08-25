@@ -92,16 +92,16 @@ pnpm add @sttot/openapi-thrift
 - nullable union：`anyOf [T, null]`
 - 可组合对象 `allOf` 的最小支持（当前已覆盖 JobSeek 出现的单 `ref` 包装）
 - 可通过 vendor extension 显式接管少量不支持的字段校验：
-  - `x-dramawork-allow-unsupported-validation: true`
-  - `x-dramawork-validate: "custom_rule"` 或 `string[]`
+  - `x-ispark-allow-unsupported-validation: true`
+  - `x-ispark-validate: "custom_rule"` 或 `string[]`
 
 ## 当前不支持
 
 - `oneOf`
 - 非 nullable 的 `anyOf`
 - 复杂 `allOf` 继承拼装
-- `pattern`（当前会显式报错；如确有统一 validator，可用 `x-dramawork-validate` 显式接管）
-- `multipleOf`（当前会显式报错；如确有统一 validator，可用 `x-dramawork-validate` 显式接管）
+- `pattern`（当前会显式报错；如确有统一 validator，可用 `x-ispark-validate` 显式接管）
+- `multipleOf`（当前会显式报错；如确有统一 validator，可用 `x-ispark-validate` 显式接管）
 - `additionalProperties: false`（当前会显式报错；这属于 binder/decoder 级约束，不能通过字段 validator 接管）
 - 未列入白名单的 string `format`（当前会显式报错，要求手写 validator 或收紧 schema）
 - `GET/DELETE/HEAD/OPTIONS` requestBody
@@ -127,8 +127,8 @@ pnpm add @sttot/openapi-thrift
 {
   "type": "string",
   "pattern": "^1\\d{10}$",
-  "x-dramawork-allow-unsupported-validation": true,
-  "x-dramawork-validate": "cn_mobile"
+  "x-ispark-allow-unsupported-validation": true,
+  "x-ispark-validate": "cn_mobile"
 }
 ```
 
@@ -138,12 +138,16 @@ pnpm add @sttot/openapi-thrift
 {
   "type": "number",
   "multipleOf": 0.5,
-  "x-dramawork-allow-unsupported-validation": true,
-  "x-dramawork-validate": ["half_step", "gte=0"]
+  "x-ispark-allow-unsupported-validation": true,
+  "x-ispark-validate": ["half_step", "gte=0"]
 }
 ```
 
-这条能力的含义是“我明确知道这里不是自动生成，而是人工接管”。如果只写允许开关、不提供 `x-dramawork-validate`，converter 会直接报错。
+这条能力的含义是“我明确知道这里不是自动生成，而是人工接管”。如果只写允许开关、不提供 `x-ispark-validate`，converter 会直接报错。
+
+### `x-dramawork-*` 兼容迁移
+
+`x-ispark-*` 是当前 canonical 扩展。`x-dramawork-*` 仅保留为已发布文档和服务的兼容读取入口，并会产生弃用 warning。迁移期间允许双写，但同一 schema 上的新旧值必须完全一致；不一致会 fail-fast。新模板、示例和新接口只应写 `x-ispark-*`。后续移除旧字段前会单独发布 breaking change。
 
 注意：
 
@@ -176,8 +180,8 @@ pnpm --dir standard/openapi-thrift build
 如果从 npm 安装，建议直接用 `npx`：
 
 ```bash
-npx @sttot/openapi-thrift@0.1.1 validate --input ./project.openapi.json
-npx @sttot/openapi-thrift@0.1.1 thrift --input ./project.openapi.json --output ./idl/project.thrift
+npx @sttot/openapi-thrift@0.2.0 validate --input ./project.openapi.json
+npx @sttot/openapi-thrift@0.2.0 thrift --input ./project.openapi.json --output ./idl/project.thrift
 ```
 
 再运行 CLI：

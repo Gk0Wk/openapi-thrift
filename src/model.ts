@@ -114,7 +114,11 @@ export interface OpenApiSchemaObject {
   oneOf?: OpenApiSchema[]
   anyOf?: OpenApiSchema[]
   allOf?: OpenApiSchema[]
+  "x-ispark-validate"?: string | string[]
+  "x-ispark-allow-unsupported-validation"?: boolean
+  /** @deprecated Use x-ispark-validate. */
   "x-dramawork-validate"?: string | string[]
+  /** @deprecated Use x-ispark-allow-unsupported-validation. */
   "x-dramawork-allow-unsupported-validation"?: boolean
   "x-apifox-mock"?: string
   mockScript?: string

@@ -952,16 +952,58 @@ function validateUnsupportedSchemaKeywords(
   schema: OpenApiSchemaObject,
   pointer: string,
 ): void {
-  const manualOverride = Boolean(
-    schema["x-dramawork-allow-unsupported-validation"],
-  )
-  const manualValidators = schema["x-dramawork-validate"]
+  const canonicalOverride = schema["x-ispark-allow-unsupported-validation"]
+  const legacyOverride = schema["x-dramawork-allow-unsupported-validation"]
+  const canonicalValidators = schema["x-ispark-validate"]
+  const legacyValidators = schema["x-dramawork-validate"]
+  if (legacyOverride !== undefined) {
+    addWarning(
+      context,
+      "hz.schema.legacy_manual_override",
+      `${pointer}/x-dramawork-allow-unsupported-validation`,
+      "x-dramawork-allow-unsupported-validation 已弃用，请迁移到 x-ispark-allow-unsupported-validation",
+    )
+  }
+  if (legacyValidators !== undefined) {
+    addWarning(
+      context,
+      "hz.schema.legacy_manual_validator",
+      `${pointer}/x-dramawork-validate`,
+      "x-dramawork-validate 已弃用，请迁移到 x-ispark-validate",
+    )
+  }
+  if (
+    canonicalOverride !== undefined &&
+    legacyOverride !== undefined &&
+    canonicalOverride !== legacyOverride
+  ) {
+    addError(
+      context,
+      "hz.schema.manual_override_conflict",
+      `${pointer}/x-ispark-allow-unsupported-validation`,
+      "x-ispark-allow-unsupported-validation 与已弃用字段必须保持一致",
+    )
+  }
+  if (
+    canonicalValidators !== undefined &&
+    legacyValidators !== undefined &&
+    JSON.stringify(canonicalValidators) !== JSON.stringify(legacyValidators)
+  ) {
+    addError(
+      context,
+      "hz.schema.manual_validator_conflict",
+      `${pointer}/x-ispark-validate`,
+      "x-ispark-validate 与已弃用字段必须保持一致",
+    )
+  }
+  const manualOverride = Boolean(canonicalOverride ?? legacyOverride ?? false)
+  const manualValidators = canonicalValidators ?? legacyValidators
   if (manualOverride && !hasManualValidator(manualValidators)) {
     addError(
       context,
       "hz.schema.manual_validator_missing",
-      `${pointer}/x-dramawork-validate`,
-      "x-dramawork-allow-unsupported-validation 需要同时提供 x-dramawork-validate",
+      `${pointer}/x-ispark-validate`,
+      "x-ispark-allow-unsupported-validation 需要同时提供 x-ispark-validate",
     )
   }
 
@@ -970,7 +1012,7 @@ function validateUnsupportedSchemaKeywords(
       context,
       "hz.schema.format",
       `${pointer}/format`,
-      `不支持 format=${schema.format} 自动投影，请收紧 schema 或显式 x-dramawork-validate`,
+      `不支持 format=${schema.format} 自动投影，请收紧 schema 或显式 x-ispark-validate`,
     )
   }
   if (schema.oneOf?.length) {
@@ -1000,7 +1042,7 @@ function validateUnsupportedSchemaKeywords(
       context,
       "hz.schema.pattern",
       `${pointer}/pattern`,
-      "pattern 不能自动投影；需要显式 x-dramawork-validate",
+      "pattern 不能自动投影；需要显式 x-ispark-validate",
     )
   }
   if (typeof schema.multipleOf === "number" && !manualOverride) {
@@ -1008,7 +1050,7 @@ function validateUnsupportedSchemaKeywords(
       context,
       "hz.schema.multiple_of",
       `${pointer}/multipleOf`,
-      "multipleOf 不能自动投影；需要显式 x-dramawork-validate",
+      "multipleOf 不能自动投影；需要显式 x-ispark-validate",
     )
   }
   for (const keyword of [
@@ -1026,7 +1068,7 @@ function validateUnsupportedSchemaKeywords(
         context,
         "hz.schema.unsupported_validator",
         `${pointer}/${keyword}`,
-        `${keyword} 不能自动投影；需要显式 x-dramawork-validate`,
+        `${keyword} 不能自动投影；需要显式 x-ispark-validate`,
       )
     }
   }
