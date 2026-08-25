@@ -246,11 +246,11 @@ test("projects the constrained OpenAPI profile into thrift", () => {
   }
 
   const result = convertOpenApiToThrift(document, {
-    namespace: "dramawork.project",
+    namespace: "ispark.project",
     serviceName: "ProjectService",
   })
 
-  assert.match(result.thrift, /namespace go dramawork\.project/)
+  assert.match(result.thrift, /namespace go ispark\.project/)
   assert.match(result.thrift, /struct GetProjectRequest/)
   assert.match(
     result.thrift,
@@ -306,7 +306,7 @@ test("accepts OpenAPI 3.1 documents", () => {
   }
 
   const result = convertOpenApiToThrift(document, {
-    namespace: "dramawork.project",
+    namespace: "ispark.project",
     serviceName: "ProjectService",
   })
 
@@ -1194,7 +1194,7 @@ test("converts supported subset fixture end-to-end", () => {
   const expectedThrift = loadFixtureText("apifox-boundary-lab.supported.thrift")
 
   const result = convertOpenApiToThrift(document, {
-    namespace: "dramawork.boundarylab.supported",
+    namespace: "ispark.boundarylab.supported",
     serviceName: "BoundaryLabSupportedService",
   })
 

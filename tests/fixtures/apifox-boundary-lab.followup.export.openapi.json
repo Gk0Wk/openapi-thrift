@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "title": "DramaWork OpenAPI Thrift Boundary Lab",
+    "title": "ISpark OpenAPI Thrift Boundary Lab",
     "description": "Baseline import file for APIFox boundary testing. The file uses YAML extension but JSON syntax so APIFox can import it and the current CLI can parse it directly.",
     "version": "0.1.0"
   },

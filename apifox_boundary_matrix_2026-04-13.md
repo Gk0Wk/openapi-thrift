@@ -1,6 +1,6 @@
 # APIFox 边界矩阵（2026-04-13）
 
-这份矩阵基于 APIFox 项目 `DramaWork OpenAPI Thrift Boundary Lab` 的真实导出文件 [apifox-boundary-lab.export.openapi.json](tests/fixtures/apifox-boundary-lab.export.openapi.json)。
+这份矩阵基于 APIFox 项目 `ISpark OpenAPI Thrift Boundary Lab` 的真实导出文件 [apifox-boundary-lab.export.openapi.json](tests/fixtures/apifox-boundary-lab.export.openapi.json)。
 
 ## 判定规则
 

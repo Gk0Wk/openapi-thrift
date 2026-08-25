@@ -31,7 +31,7 @@ const SUPPORTED_HTTP_METHODS = [
 ] as const
 
 const NO_REQUEST_BODY_METHODS = new Set(["get", "delete", "head", "options"])
-const DEFAULT_NAMESPACE = "dramawork.openapi"
+const DEFAULT_NAMESPACE = "ispark.openapi"
 const EMPTY_RESPONSE_NAME = "EmptyResponse"
 const SUPPORTED_STRING_FORMATS = new Set([
   "base64",

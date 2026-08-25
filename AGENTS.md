@@ -2,7 +2,7 @@
 
 ## 角色与事实源
 
-本仓是三仓生成链的契约校验和投影层，不是通用 OpenAPI codegen，也不直接生成完整 Hertz、Kitex 或前端应用。
+本仓是 ISpark 三仓生成链的契约校验和投影层，不是通用 OpenAPI codegen，也不直接生成完整 Hertz、Kitex 或前端应用。
 
 ```text
 OpenAPI / Apifox export

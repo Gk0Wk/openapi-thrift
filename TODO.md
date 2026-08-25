@@ -4,5 +4,8 @@
 
 ## Active Work
 
+当前无进行中的任务。
+
+
 - [ ] Run GitHub Actions CI at least once and observe whether `pnpm audit` has environment-specific noise.
 - [ ] Configure `NPM_TOKEN` before enabling GitHub Actions automatic npm publish.

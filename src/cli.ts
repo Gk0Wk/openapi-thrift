@@ -135,7 +135,7 @@ Usage:
 
 Examples:
   node dist/cli.js validate --input ./project.openapi.json
-  node dist/cli.js --input ./project.openapi.json --namespace dramawork.project --service-name ProjectService
+  node dist/cli.js --input ./project.openapi.json --namespace ispark.project --service-name ProjectService
   node dist/cli.js --input ./project.openapi.json --idl-dir ../existing-idl --output ./idl/project.thrift
   node dist/cli.js --input ./project.openapi.json --output ./idl/project.thrift
 `)

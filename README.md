@@ -51,7 +51,7 @@ pnpm add @sttot/openapi-thrift
 
 ## 目标
 
-- 只支持 ISpark 短剧大师 已冻结的 OpenAPI profile
+- 只支持 ISpark 已冻结的 OpenAPI profile
 - 不做“万能转换器”
 - 核心逻辑保持纯 TypeScript，便于浏览器和 CLI 复用
 - 第一版内置 APIFox/HZ-Thrift profile 校验和 `.thrift` 文本输出，不直接调用 `hz`、`kitex`、APIFox 或前端生成器
@@ -194,7 +194,7 @@ node standard/openapi-thrift/dist/cli.js \
 node standard/openapi-thrift/dist/cli.js \
   thrift \
   --input ./project.openapi.json \
-  --namespace dramawork.project \
+  --namespace ispark.project \
   --service-name ProjectService
 ```
 
@@ -230,7 +230,7 @@ import {
 assertOpenApiRenderDocument(openApiDocument)
 
 const result = convertOpenApiToThrift(openApiDocument, {
-  namespace: "dramawork.project",
+  namespace: "ispark.project",
   serviceName: "ProjectService",
 })
 
