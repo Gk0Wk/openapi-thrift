@@ -1,0 +1,82 @@
+name: openapi-thrift-release-verify
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        type: string
+        required: true
+      source_run:
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Immutable release tag to verify
+        type: string
+        required: true
+      source_run:
+        description: Original tag build run ID (artifacts must still be retained)
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  readback:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Bind original tag build to the immutable source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          SOURCE_RUN: ${{ inputs.source_run }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
+          [[ "$SOURCE_RUN" =~ ^[0-9]+$ ]]
+          source_commit="$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")"
+          gh api "repos/${GH_REPO}/actions/runs/${SOURCE_RUN}" |
+            jq -e --arg tag "$RELEASE_TAG" --arg commit "$source_commit" \
+              '.event == "push" and .head_branch == $tag and .head_sha == $commit and .path == ".github/workflows/openapi-thrift-release.yml"'
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-*
+          path: .tmp/original-release
+          merge-multiple: true
+          run-id: ${{ inputs.source_run }}
+          github-token: ${{ github.token }}
+      - name: Verify GitHub release assets against the original build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          gh release download "$RELEASE_TAG" --dir .tmp/github-release
+          (cd .tmp/github-release && sha256sum --check SHA256SUMS)
+          (cd .tmp/original-release && test "$(find . -maxdepth 1 -name '*.sha256' | wc -l)" -eq 6 && sha256sum --check *.sha256)
+          for original in .tmp/original-release/*.tar.gz .tmp/original-release/*.zip .tmp/original-release/*.tgz; do
+            cmp "$original" ".tmp/github-release/$(basename "$original")"
+          done
+      - name: Read exact npm version and install published npm and Go consumers
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          npm install --global npm@11.9.0
+          release_version="${RELEASE_TAG#v}"
+          go run ./cmd/release verify-npm --tag "$RELEASE_TAG" --archive ".tmp/original-release/sttot-openapi-thrift-${release_version}.tgz" --output .tmp/registry
+          npm run install:check -- ".tmp/registry/sttot-openapi-thrift-${release_version}.tgz"
+          go run ./cmd/release smoke-go --module-version "$RELEASE_TAG"
