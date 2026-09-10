@@ -1,3 +1,6 @@
+# Source, fixtures and package assets must retain the same LF bytes on every OS.
+* text=auto eol=lf
+
 # Preserve the exact shared Go core bytes across owner and backend checkouts.
 /go.mod -text
 /go.sum -text

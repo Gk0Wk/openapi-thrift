@@ -10,6 +10,17 @@ import (
 	"testing"
 )
 
+func TestVersionDoesNotRequireInputOrExternalTools(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	var out, diagnostic bytes.Buffer
+	if code := Run([]string{"--version"}, &out, &diagnostic); code != 0 {
+		t.Fatalf("version failed: %d %s", code, &diagnostic)
+	}
+	if !strings.HasPrefix(out.String(), "openapi-thrift ") || diagnostic.Len() != 0 {
+		t.Fatalf("unexpected version output: %q %q", &out, &diagnostic)
+	}
+}
+
 func TestNativeCLIWithoutNodePath(t *testing.T) {
 	t.Setenv("PATH", t.TempDir())
 	fixture := filepath.Join("..", "..", "tests", "fixtures", "apifox-boundary-lab.supported.openapi.json")

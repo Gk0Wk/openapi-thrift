@@ -8,4 +8,11 @@
 
 Go 单核心迁移 G1–G5 已完成并归档至 [核心验收](docs/releases/unreleased/2026-09-10-runtime-go-core.md) 与 [backend 无 Node 整链验收](docs/releases/unreleased/2026-09-10-workspace-backend-go-integration.md)。当前源码未发布，真实消费者未迁移。
 
-- [ ] Configure `NPM_TOKEN` before enabling GitHub Actions automatic npm publish.
+## 同版本多入口发行（已批准）
+
+执行边界与隔离目录见 [brief](working-delta/distribution-20260910.md)。
+
+- [ ] D1 版本与原生产物：由 package.json 冻结版本；Go CLI 版本/提交可核对；六个平台可执行文件、LICENSE、摘要与校验和。
+- [ ] D2 安装验收：隔离 npm tarball 调用、独立 Go consumer、原生 CLI 正常/失败保留输出；验证发布产物，不依赖工作树 dist。
+- [ ] D3 流水线：固定 action/工具，六平台运行验收，同提交 npm/Go/CLI；npm OIDC/provenance，RC 使用 next 分发标签。
+- [ ] D4 文档与交付：Go/npm/CLI 安装和升级说明、实际 CI 及发布后回读证据；核对 npm 可信发布配置。本机旧 npm 凭证 401，GitHub 无发布 Secret，不自动降低发布鉴证。

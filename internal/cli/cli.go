@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	core "github.com/Gk0Wk/openapi-thrift"
@@ -26,6 +27,32 @@ func Run(args []string, stdout, stderr io.Writer) int {
 
 var errValidationFailed = errors.New("OpenAPI validation failed")
 
+// Release archives set these with -X; go install uses the module build info.
+var releaseVersion, releaseCommit string
+
+func versionText() string {
+	version, commit := releaseVersion, releaseCommit
+	if info, ok := debug.ReadBuildInfo(); ok {
+		if version == "" && info.Main.Version != "(devel)" {
+			version = info.Main.Version
+		}
+		if commit == "" {
+			for _, setting := range info.Settings {
+				if setting.Key == "vcs.revision" {
+					commit = setting.Value
+				}
+			}
+		}
+	}
+	if version == "" {
+		version = "dev"
+	}
+	if commit == "" {
+		return "openapi-thrift " + version
+	}
+	return "openapi-thrift " + version + " (" + commit + ")"
+}
+
 func run(args []string, stdout, stderr io.Writer) error {
 	action := "thrift"
 	if len(args) > 0 && (args[0] == "validate" || args[0] == "thrift") {
@@ -34,7 +61,7 @@ func run(args []string, stdout, stderr io.Writer) error {
 	flags := flag.NewFlagSet("openapi-thrift", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	var input, output, idlDir, namespace, service, profile string
-	var strict, help bool
+	var strict, help, version bool
 	for _, name := range []string{"input", "i"} {
 		flags.StringVar(&input, name, "", "OpenAPI JSON or YAML input")
 	}
@@ -48,6 +75,7 @@ func run(args []string, stdout, stderr io.Writer) error {
 	flags.BoolVar(&strict, "strict-warnings", false, "Fail validation on warnings")
 	flags.BoolVar(&help, "help", false, "Show usage")
 	flags.BoolVar(&help, "h", false, "Show usage")
+	flags.BoolVar(&version, "version", false, "Show version and source revision")
 	flags.Usage = func() { usage(stdout) }
 	if err := flags.Parse(args); err != nil {
 		return err
@@ -58,6 +86,10 @@ func run(args []string, stdout, stderr io.Writer) error {
 	if help {
 		usage(stdout)
 		return nil
+	}
+	if version {
+		_, err := fmt.Fprintln(stdout, versionText())
+		return err
 	}
 	if profile != core.ProfileApifoxHzThrift {
 		return fmt.Errorf("unsupported profile: %s", profile)
@@ -116,6 +148,7 @@ func usage(out io.Writer) {
 	fmt.Fprint(out, `openapi-thrift (Go core)
 
 Usage:
+  openapi-thrift --version
   openapi-thrift validate --input <openapi.json|yaml> [--strict-warnings]
   openapi-thrift thrift --input <openapi.json|yaml> [--output <out.thrift>]
     [--idl-dir <directory>] [--namespace <go.namespace>] [--service-name <ServiceName>]

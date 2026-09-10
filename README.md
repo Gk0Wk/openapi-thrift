@@ -38,6 +38,17 @@ OpenAPI / Apifox export
 
 ## 原生 CLI
 
+发行采用同一版本的 npm/WASM、Go Module 和六平台 CLI；流程与 OIDC 配置见 [分发说明](docs/distribution.md)。`0.3.0-rc.1` 目前尚未发布，以下安装命令须在对应版本实际发布后使用：
+
+```bash
+npm install @sttot/openapi-thrift@0.3.0-rc.1
+go get github.com/Gk0Wk/openapi-thrift@v0.3.0-rc.1
+go install github.com/Gk0Wk/openapi-thrift/cmd/openapi-thrift@v0.3.0-rc.1
+openapi-thrift --version
+```
+
+也可从该版本 GitHub Release 下载 Windows/macOS/Linux amd64/arm64 的预编译 CLI，核对 `SHA256SUMS` 后解包；运行它不需要 Go 或 Node。预发布 npm 使用 `next` 分发标签，实际项目仍固定完整版本。
+
 ```bash
 go build -trimpath -o .tmp/openapi-thrift ./cmd/openapi-thrift
 go run ./cmd/openapi-thrift validate --input ./project.openapi.yaml
@@ -211,6 +222,18 @@ const result = convertOpenApiToThrift(openApiDocument, {
 console.log(result.thrift)
 ```
 
+Node 脚本显式读取包内 WASM 资源（无需安装 Go）：
+
+```ts
+import { readFile } from "node:fs/promises"
+import { initializeOpenApiThrift, convertOpenApiToThrift } from "@sttot/openapi-thrift"
+
+await initializeOpenApiThrift({
+  wasm: await readFile(new URL(import.meta.resolve("@sttot/openapi-thrift/openapi-thrift.wasm"))),
+})
+const result = convertOpenApiToThrift(openApiDocument)
+```
+
 浏览器必须先等待初始化，随后保留同步转换/校验 API。默认从 `index.js` 旁加载 `openapi-thrift.wasm`；打包器需保留该资源和固定 Go 配套 `wasm_exec.js`，也可传入 `{ wasmURL }` 或 `{ wasm: bytesOrModule }`。CSP 需允许同源资源与 `wasm-unsafe-eval`，无需 JS `unsafe-eval`。前端 npm 包已移除 Node CLI 和 `openapi-render` 别名；未自动迁移任何真实消费者。部署/worker 用法与包体限制见 [Go/WASM 边界](docs/go-core.md)。
 
 真实浏览器示例：`pnpm build` 后运行 `go run ./cmd/browser-preview`，打开打印的 loopback URL。文档不会上传。较大输入建议在 Web Worker 内初始化和调用，避免占用页面线程。
@@ -225,3 +248,5 @@ pnpm lint
 pnpm test
 pnpm pack:check
 ```
+
+实际安装验收：`go run ./cmd/release smoke-go`；提交后 `go run ./cmd/release build` 构建并解包验证本机 CLI；`npm run install:check -- <package.tgz>` 只从 npm 压缩包安装、调用 JS/WASM。六平台矩阵与发布后远端安装由发行 workflow 执行。

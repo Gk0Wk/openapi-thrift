@@ -20,6 +20,8 @@ JSON/YAML 解析保留字段顺序，数字对象键仍按 ECMAScript 规则排�
 
 ## 验证与发布边界
 
+同版本 npm/Go/原生 CLI 的安装、版本标识、六平台矩阵、OIDC 与发布后回读见 [分发说明](distribution.md)。Node 消费者通过公开 WASM 导出读取字节初始化，后端仍使用原生 Go。
+
 原生验证 `go test -race ./...`、`go vet ./...`；CLI 测试显式清空 Node PATH，执行 YAML validate 与真实 fixture 的文件生成/替换，并确认失败时保留旧文件。浏览器维护侧运行 lint/typecheck、43 项 WASM/生命周期测试与 pack 内容白名单；Node 在这里只用于 TS/npm 生态。
 
 2026-09-10 Edge 的本机页面实测：默认 YAML 成功生成 EmptyResponse/Health 方法；oneOf 显示两个明确 issue 并隐藏旧输出；非法 YAML 显示解析错误。浏览器资源清单只有 example.js、index.js、wasm_exec.js、WASM，均为 loopback；控制台 error/warn 为空。该结果不代表大型文档性能、所有浏览器或所有打包器均已验收。

@@ -3,6 +3,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -13,12 +14,15 @@ import (
 )
 
 func main() {
-	if _, err := os.Stat("dist/openapi-thrift.wasm"); err != nil {
+	packageRoot := flag.String("package-root", ".", "Built source or installed npm package directory")
+	flag.Parse()
+	dist := filepath.Join(*packageRoot, "dist")
+	if _, err := os.Stat(filepath.Join(dist, "openapi-thrift.wasm")); err != nil {
 		log.Fatal("run pnpm build from the repository first: ", err)
 	}
 	assets := map[string]string{
 		"/": "examples/browser/index.html", "/example.js": "examples/browser/example.js",
-		"/dist/index.js": "dist/index.js", "/dist/wasm_exec.js": "dist/wasm_exec.js", "/dist/openapi-thrift.wasm": "dist/openapi-thrift.wasm",
+		"/dist/index.js": filepath.Join(dist, "index.js"), "/dist/wasm_exec.js": filepath.Join(dist, "wasm_exec.js"), "/dist/openapi-thrift.wasm": filepath.Join(dist, "openapi-thrift.wasm"),
 	}
 	mux := http.NewServeMux()
 	for route, file := range assets {

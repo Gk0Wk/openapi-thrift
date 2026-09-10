@@ -46,10 +46,11 @@
   "scripts": {
     "build": "go run ./cmd/build-wasm && tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "biome check src tests",
+    "lint": "biome check src tests scripts",
     "test": "pnpm run build && node --test tests/*.test.mjs",
     "test:go": "go test -race ./... && go vet ./...",
     "pack:check": "node scripts/check-pack.mjs",
+    "install:check": "node scripts/check-package-install.mjs",
     "prepublishOnly": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run pack:check"
   },
   "devDependencies": {

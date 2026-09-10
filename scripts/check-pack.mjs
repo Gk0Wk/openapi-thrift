@@ -24,11 +24,19 @@ const allowedFiles = new Set([
 const maxCompressedSizeBytes = 2_500_000
 const maxUnpackedSizeBytes = 10_000_000
 const packageRoot = fileURLToPath(new URL("..", import.meta.url))
-const packageManifestPath = fileURLToPath(new URL("../package.json", import.meta.url))
+const packageManifestPath = fileURLToPath(
+  new URL("../package.json", import.meta.url),
+)
 
 async function main() {
-  const packageManifest = JSON.parse(await readFile(packageManifestPath, "utf8"))
-  assert.equal(packageManifest.name, "@sttot/openapi-thrift", "package.json 包名与 canonical 名称不一致")
+  const packageManifest = JSON.parse(
+    await readFile(packageManifestPath, "utf8"),
+  )
+  assert.equal(
+    packageManifest.name,
+    "@sttot/openapi-thrift",
+    "package.json 包名与 canonical 名称不一致",
+  )
   assert.equal(
     packageManifest.homepage,
     "https://github.com/Gk0Wk/openapi-thrift#readme",
@@ -43,7 +51,11 @@ async function main() {
     "https://github.com/Gk0Wk/openapi-thrift/issues",
     "package.json bugs URL 与 canonical 仓库不一致",
   )
-  assert.equal(packageManifest.bin, undefined, "CLI 由 Go 提供，浏览器包不再安装 Node CLI")
+  assert.equal(
+    packageManifest.bin,
+    undefined,
+    "CLI 由 Go 提供，浏览器包不再安装 Node CLI",
+  )
   assert.deepEqual(packageManifest.sideEffects, ["./dist/wasm_exec.js"])
 
   const { stdout } =
@@ -76,11 +88,14 @@ async function main() {
   }
 
   for (const requiredFile of allowedFiles) {
-    assert.ok(filePaths.includes(requiredFile), `tarball 缺少预期文件: ${requiredFile}`)
+    assert.ok(
+      filePaths.includes(requiredFile),
+      `tarball 缺少预期文件: ${requiredFile}`,
+    )
   }
 
   process.stdout.write(
-    JSON.stringify(
+    `${JSON.stringify(
       {
         package: entry.name,
         version: entry.version,
@@ -90,7 +105,7 @@ async function main() {
       },
       null,
       2,
-    ) + "\n",
+    )}\n`,
   )
 }
 
