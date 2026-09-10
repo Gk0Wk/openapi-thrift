@@ -42,4 +42,6 @@ npm 包继续供 JS/TS 消费；Go 开发和预编译 CLI 使用者无需 Node�
 
 本地 Go race/vet、43 项 WASM 测试、lint/typecheck/pack、govulncheck/npm audit、npm 安装、Go consumer 与 CLI smoke 已通过。Edge 从已安装包加载 JS/WASM，正常 YAML 转换、oneOf 精确拒绝、非法 YAML 反馈及旧结果清空均通过；console warn/error 为空，资源清单只有 loopback example.js/index.js/wasm_exec.js/WASM。actionlint v1.7.12 检查通过。
 
-完整远端矩阵与发布后回读尚待本轮后续验证。npm 旧凭证 401，可信发布绑定仍待核对；尚未推送版本 tag 或发布 npm/CLI。此条目不代表实际服务迁移、OS 签名/公证或生产准入。
+实现提交 `c8b97e8d3040cf6303818e928a73a2dfe16de148` 的 [远端 CI](https://github.com/Gk0Wk/openapi-thrift/actions/runs/34491390131) 已通过全部 13 项构建/检查：六个平台分别实际解包执行原生 CLI 并编译独立 Go consumer，Node 22/24 安装并调用同一 npm tarball；普通分支的 publish 按设计跳过。
+
+发布后回读待版本标签流水线验收。npm owner 已完成进入设置页的安全验证，保存精确 OIDC 绑定时再次要求安全密钥；尚未推送版本 tag 或发布 npm/CLI。此条目不代表实际服务迁移、OS 签名/公证或生产准入。

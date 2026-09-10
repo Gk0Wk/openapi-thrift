@@ -30,7 +30,7 @@
 | Environment name | 留空（workflow 未使用 environment） |
 | Allowed actions | 允许 `npm publish` |
 
-只在 publish job 开启 `id-token: write` 和 `contents: write`；安装依赖和测试 job 没有发布权限。npm CLI 固定为 `11.9.0`，发布直接消费已验收 tarball，开启 provenance；不在发布时重建或回退为无 provenance/token 发布。当前本机旧 npm 凭证返回 401，不能作为发布可用性证据。
+只在 publish job 开启 `id-token: write` 和 `contents: write`；安装依赖和测试 job 没有发布权限。npm CLI 固定为 `11.9.0`，发布直接消费已验收 tarball，开启 provenance；不在发布时重建或回退为无 provenance/token 发布。绑定需要 npm owner 完成安全验证；本机登录状态不能替代 GitHub OIDC 发布验收。
 
 官方依据：[npm 可信发布](https://docs.npmjs.com/trusted-publishers/)、[Go Module 发布](https://go.dev/doc/modules/publishing)、[GitHub 原生 runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)。
 

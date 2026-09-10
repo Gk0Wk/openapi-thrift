@@ -1,6 +1,6 @@
 # OpenAPI Thrift
 
-受限 APIFox/Hertz/Thrift 契约校验与投影；Go 唯一核心供原生 CLI 与浏览器 WASM 共用，源码候选 `0.3.0-rc.1` 尚未发布。
+受限 APIFox/Hertz/Thrift 契约校验与投影；Go 唯一核心供原生 CLI 与浏览器 WASM 共用，版本与升级边界见 [0.3.0-rc.1](docs/releases/v0.3.0-rc.1.md)。
 
 - `value.go / profile.go / projector.go / thrift.go`：解析、校验、投影与渲染。
 - `cmd/openapi-thrift`：原生 CLI；`cmd/build-wasm`：固定 Go 构建；`src/`：浏览器薄绑定与类型。

@@ -14,4 +14,5 @@
 
 - GitHub 仓库具备 push/admin 权限，当前没有 Actions secrets。
 - 本机 `.local/npm-publish.npmrc` 的 `npm whoami` 返回 401；不读取或打印 token，不用失效凭证进行发布试错。
-- 先完成全部可审阅代码、测试与发行产物；npm 可信发布配置若需 owner 交互，在最后提供精确字段。
+- 实现提交 `c8b97e8d3040cf6303818e928a73a2dfe16de148` 的 [CI](https://github.com/Gk0Wk/openapi-thrift/actions/runs/34491390131) 全部 13 项构建/检查通过，实际原生平台为 Linux/macOS/Windows 的 amd64/arm64。
+- npm owner 已完成进入设置页的安全验证。已填写 owner `Gk0Wk`、repo `openapi-thrift`、workflow `openapi-thrift-release.yml`、空 environment 和允许 `npm publish`；保存时要求第二次安全密钥验证，等待 owner 完成后核对保存结果。未修改包原有 2FA 策略。
