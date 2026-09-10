@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<title>OpenAPI → Thrift</title>
+<style>
+  body { max-width: 72rem; margin: 2rem auto; padding: 0 1rem; font: 16px/1.5 system-ui,sans-serif; color: #17212b; }
+  textarea { box-sizing: border-box; width: 100%; min-height: 16rem; font: 14px/1.5 monospace; padding: 1rem; }
+  button { margin: 1rem 0; padding: .5rem 1rem; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #f3f5f7; padding: 1rem; }
+  #status { display: inline-block; margin-left: 1rem; }
+</style>
+<h1>OpenAPI → Thrift</h1>
+<p>输入 JSON 或 YAML。校验和转换均在浏览器中完成，文档不会上传。</p>
+<label for="source">OpenAPI 文档</label>
+<textarea id="source" spellcheck="false">openapi: 3.0.3
+info:
+  title: Example
+paths:
+  /health:
+    get:
+      operationId: health
+      tags: [health]
+      responses:
+        204:
+          description: healthy
+components:
+  schemas: {}
+</textarea>
+<button id="convert" disabled>校验并转换</button><span id="status" role="status">正在加载转换器…</span>
+<pre id="issues" aria-label="校验结果" hidden></pre>
+<pre id="output" aria-label="Thrift 输出" hidden></pre>
+<script type="module" src="./example.js"></script>
+</html>
