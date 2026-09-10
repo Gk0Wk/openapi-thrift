@@ -1,0 +1,200 @@
+name: openapi-thrift-release
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/distribution-*'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: openapi-thrift-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    uses: ./.github/workflows/openapi-thrift-ci.yml
+
+  metadata:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      commit: ${{ steps.release.outputs.commit }}
+      npm_tag: ${{ steps.release.outputs.npm_tag }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
+        with:
+          go-version-file: go.mod
+      - name: Verify version, tag and source identity
+        id: release
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: go run ./cmd/release metadata --tag "$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+  native:
+    needs: metadata
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: linux/amd64
+            artifact: linux-amd64
+          - runner: ubuntu-24.04-arm
+            target: linux/arm64
+            artifact: linux-arm64
+          - runner: macos-15-intel
+            target: darwin/amd64
+            artifact: darwin-amd64
+          - runner: macos-15
+            target: darwin/arm64
+            artifact: darwin-arm64
+          - runner: windows-2022
+            target: windows/amd64
+            artifact: windows-amd64
+          - runner: windows-11-arm
+            target: windows/arm64
+            artifact: windows-arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
+        with:
+          go-version-file: go.mod
+      - name: Build, unpack and run native release with no Go or Node on PATH
+        env:
+          RELEASE_TARGET: ${{ matrix.target }}
+        shell: bash
+        run: go run ./cmd/release build --target "$RELEASE_TARGET"
+      - name: Verify clean Windows checkout fixtures
+        if: runner.os == 'Windows'
+        run: go test ./...
+      - name: Install CLI and compile independent Go consumer
+        run: go run ./cmd/release smoke-go
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-native-${{ matrix.artifact }}
+          path: .tmp/release/*
+          if-no-files-found: error
+          retention-days: 14
+
+  npm-package:
+    needs: metadata
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Prepare pinned package tooling
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.14.0 --activate
+          npm install --global npm@11.9.0
+          pnpm install --frozen-lockfile
+      - name: Build and pack the exact npm publication payload
+        run: |
+          pnpm build
+          pnpm pack:check
+          mkdir -p .tmp/release
+          npm pack --ignore-scripts --pack-destination .tmp/release
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-npm
+          path: .tmp/release/*.tgz
+          if-no-files-found: error
+          retention-days: 14
+
+  npm-consumer:
+    needs: [metadata, npm-package]
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-npm
+          path: .tmp/release
+      - name: Install the packed dependency offline without Go or lifecycle hooks
+        env:
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+        run: npm run install:check -- ".tmp/release/sttot-openapi-thrift-${RELEASE_VERSION}.tgz"
+
+  publish:
+    if: github.ref_type == 'tag'
+    needs: [verify, metadata, native, npm-consumer]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c
+        with:
+          go-version-file: go.mod
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-*
+          path: .tmp/release
+          merge-multiple: true
+      - name: Pin npm and verify complete release checksums
+        run: |
+          npm install --global npm@11.9.0
+          cd .tmp/release
+          test "$(find . -maxdepth 1 -name '*.sha256' | wc -l)" -eq 6
+          sha256sum --check *.sha256
+          sha256sum *.tar.gz *.zip *.tgz > SHA256SUMS
+      - name: Publish the tested npm tarball using OIDC
+        env:
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+          NPM_DIST_TAG: ${{ needs.metadata.outputs.npm_tag }}
+        run: npm publish ".tmp/release/sttot-openapi-thrift-${RELEASE_VERSION}.tgz" --ignore-scripts --access public --provenance --tag "$NPM_DIST_TAG" --registry https://registry.npmjs.org
+      - name: Publish the same commit and native archives on GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.metadata.outputs.tag }}
+          PRERELEASE: ${{ needs.metadata.outputs.prerelease }}
+        run: gh release create "$RELEASE_TAG" .tmp/release/*.tar.gz .tmp/release/*.zip .tmp/release/*.tgz .tmp/release/SHA256SUMS --verify-tag --prerelease="$PRERELEASE" --latest=false --title "OpenAPI Thrift $RELEASE_TAG" --notes-file "docs/releases/${RELEASE_TAG}.md"
+      - name: Verify published npm bytes and installed Go module
+        env:
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+          RELEASE_TAG: ${{ needs.metadata.outputs.tag }}
+        run: |
+          mkdir -p .tmp/registry
+          npm pack "@sttot/openapi-thrift@${RELEASE_VERSION}" --ignore-scripts --pack-destination .tmp/registry --registry https://registry.npmjs.org
+          cmp ".tmp/release/sttot-openapi-thrift-${RELEASE_VERSION}.tgz" ".tmp/registry/sttot-openapi-thrift-${RELEASE_VERSION}.tgz"
+          npm run install:check -- ".tmp/registry/sttot-openapi-thrift-${RELEASE_VERSION}.tgz"
+          go run ./cmd/release smoke-go --module-version "$RELEASE_TAG"

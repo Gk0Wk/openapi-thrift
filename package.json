@@ -1,6 +1,6 @@
 {
   "name": "@sttot/openapi-thrift",
-  "version": "0.2.0",
+  "version": "0.3.0-rc.1",
   "description": "OpenAPI validation and rendering toolkit for APIFox, CloudWeGo Hz/Thrift, and frontend API generation workflows.",
   "packageManager": "pnpm@10.14.0",
   "type": "module",
@@ -34,24 +34,23 @@
     "provenance": true,
     "registry": "https://registry.npmjs.org/"
   },
-  "sideEffects": false,
-  "bin": {
-    "openapi-thrift": "dist/cli.js",
-    "openapi-render": "dist/cli.js"
-  },
+  "sideEffects": ["./dist/wasm_exec.js"],
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./openapi-thrift.wasm": "./dist/openapi-thrift.wasm"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "go run ./cmd/build-wasm && tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "biome check src tests",
+    "lint": "biome check src tests scripts",
     "test": "pnpm run build && node --test tests/*.test.mjs",
+    "test:go": "go test -race ./... && go vet ./...",
     "pack:check": "node scripts/check-pack.mjs",
+    "install:check": "node scripts/check-package-install.mjs",
     "prepublishOnly": "pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run pack:check"
   },
   "devDependencies": {

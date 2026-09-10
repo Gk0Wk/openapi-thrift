@@ -6,9 +6,16 @@ import {
   buildRouteKey,
   convertOpenApiToThrift,
   extractRouteMethodNameMapFromThriftSources,
+  initializeOpenApiThrift,
   OpenApiProjectionError,
   validateOpenApiRenderDocument,
 } from "../dist/index.js"
+
+await initializeOpenApiThrift({
+  wasm: fs.readFileSync(
+    new URL("../dist/openapi-thrift.wasm", import.meta.url),
+  ),
+})
 
 function loadFixtureDocument(name) {
   return JSON.parse(
