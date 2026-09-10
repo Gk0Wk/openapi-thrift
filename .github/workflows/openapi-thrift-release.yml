@@ -194,13 +194,14 @@ jobs:
           PRERELEASE: ${{ needs.metadata.outputs.prerelease }}
           LATEST: ${{ needs.metadata.outputs.prerelease == 'false' }}
         run: gh release create "$RELEASE_TAG" .tmp/release/*.tar.gz .tmp/release/*.zip .tmp/release/*.tgz .tmp/release/SHA256SUMS --verify-tag --prerelease="$PRERELEASE" --latest="$LATEST" --title "OpenAPI Thrift $RELEASE_TAG" --notes-file "docs/releases/${RELEASE_TAG}.md"
-      - name: Verify published npm bytes and installed Go module
-        env:
-          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
-          RELEASE_TAG: ${{ needs.metadata.outputs.tag }}
-        run: |
-          mkdir -p .tmp/registry
-          npm pack "@sttot/openapi-thrift@${RELEASE_VERSION}" --ignore-scripts --pack-destination .tmp/registry --registry https://registry.npmjs.org
-          cmp ".tmp/release/sttot-openapi-thrift-${RELEASE_VERSION}.tgz" ".tmp/registry/sttot-openapi-thrift-${RELEASE_VERSION}.tgz"
-          npm run install:check -- ".tmp/registry/sttot-openapi-thrift-${RELEASE_VERSION}.tgz"
-          go run ./cmd/release smoke-go --module-version "$RELEASE_TAG"
+
+  readback:
+    if: github.ref_type == 'tag'
+    needs: [metadata, publish]
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/openapi-thrift-release-verify.yml
+    with:
+      release_tag: ${{ needs.metadata.outputs.tag }}
+      source_run: ${{ github.run_id }}

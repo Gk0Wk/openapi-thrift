@@ -36,12 +36,12 @@ func main() {
 
 func run(args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: release metadata|build|smoke|smoke-go [flags]")
+		return errors.New("usage: release metadata|build|smoke|smoke-go|verify-npm [flags]")
 	}
 	flags := flag.NewFlagSet("release "+args[0], flag.ContinueOnError)
 	tag := flags.String("tag", "", "Release tag, which must match package.json")
 	out := flags.String("output", ".tmp/release", "Artifact directory")
-	archive := flags.String("archive", "", "Native release archive to install and test")
+	archive := flags.String("archive", "", "Native release archive or expected npm tarball")
 	moduleVersion := flags.String("module-version", "", "Published Go version; otherwise test local source")
 	target := flags.String("target", "", "Expected native GOOS/GOARCH")
 	if err := flags.Parse(args[1:]); err != nil {
@@ -55,6 +55,9 @@ func run(args []string) error {
 	}
 	if args[0] == "smoke-go" {
 		return smokeGo(*moduleVersion)
+	}
+	if args[0] == "verify-npm" {
+		return verifyNPM(*tag, *archive, *out)
 	}
 	meta, err := readMetadata(*tag)
 	if err != nil {

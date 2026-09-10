@@ -38,12 +38,16 @@
 
 ## 发布与回读
 
-确认候选 CI 与 npm 绑定后，创建并推送匹配版本的 Git tag。流水线将检查 tag 指向当前提交，发布同一份 npm tarball、CLI 归档和版本说明；随后从 registry 重新下载 tarball，逐字节比较并安装运行，再通过真实远端版本执行 Go consumer 与 `go install`。
+确认候选 CI 与 npm 绑定后，创建并推送匹配版本的 Git tag。流水线将检查 tag 指向当前提交，发布同一份 npm tarball、CLI 归档和版本说明；随后调用 `openapi-thrift-release-verify.yml`，在没有发布权限的 job 中回读原产物并运行真实 npm / Go consumers。
+
+回读先绑定原 run 的仓库、tag push 事件、workflow 和源提交，比较 GitHub 全部包体与原 run 的归档和 `SHA256SUMS`。`go run ./cmd/release verify-npm --tag v<version> --archive <original.tgz> --output .tmp/registry` 通过明确版本 endpoint 读取元数据，避开 npm 可变版本索引和本机包缓存；仅对尚不可见、限流及暂时的 HTTP 失败有限等待，最多 12 次、总计两分钟。验证包名、版本、原 tarball 的 SHA-512、固定 registry 下载地址和精确字节后才写入新的输出文件；401、格式错误或身份/字节不一致立即失败。输出文件不可覆盖。
 
 稳定版本同时设置 npm `latest` 与 GitHub latest release；预发布使用 npm `next`，且不替换 GitHub latest。
 
 Git tag、npm registry 与 GitHub Release 之间不存在跨系统事务。若任一步失败，立即核对 tag SHA、npm `dist.integrity`、Actions 原产物和 GitHub assets；不要移动已公开 tag、覆盖资产、取消发布旧版本或为重试更换包体。npm 已成功而后续步骤失败时，不重跑 publish；用原 run 的已验证资产恢复缺失的 GitHub Release/回读步骤，并记录实际状态。
 
 npm 返回非零退出码也不能单独证明未入库。恢复前从 registry 获取明确版本，逐字节比较原 run 的 tarball，并通过 `npm audit signatures` 验证 registry signature 和 provenance；核对 provenance 的 workflow、tag、commit、run 与发行源一致。GitHub 恢复后核对全部资产摘要，并重新下载安装对应本机的 CLI。保留失败 run 和独立恢复记录，不将它改写成自动流水线成功。
+
+若发布成功而自动回读失败，执行只读恢复：`gh workflow run openapi-thrift-release-verify.yml --ref main -f release_tag=v<version> -f source_run=<original-tag-run-id>`。它只下载和验证，不重建、不发布、不移动 tag，权限只有 contents/actions read。原 run 的 artifacts 必须仍在保留期内；缺失时停下，不能用当前 checkout 重建后冒充原发行产物。
 
 普通源码 push 不代表包已经发布。发行是否成功以对应 tag 的完整 Actions 结果、npm 版本及 GitHub Release 资产为准；此流程不迁移 backend 快照或任何真实服务。
