@@ -32,11 +32,15 @@
 
 只在 publish job 开启 `id-token: write` 和 `contents: write`；安装依赖和测试 job 没有发布权限。npm CLI 固定为 `11.9.0`，发布直接消费已验收 tarball，开启 provenance；不在发布时重建或回退为无 provenance/token 发布。绑定需要 npm owner 完成安全验证；本机登录状态不能替代 GitHub OIDC 发布验收。
 
+仅发布步骤设置 `NPM_CONFIG_FETCH_RETRIES=0`，避免 registry 已接受包但响应失败时再次发送 PUT；`--loglevel=http` 保留 HTTP 状态和耗时。失败仍使 job 失败，不以 registry 可见性吞掉命令错误。构建 job 用 `npm run test:release` 对本机模拟 registry 验证成功、真实 401、接受后 503，以及默认重试把 503 覆盖成 401 的对照；测试隔离凭证、关闭真实 provenance，仅访问 loopback。普通 Go 测试不要求 Node。此测试证明重试风险，不证明历史 RC 的服务端故障原因。
+
 官方依据：[npm 可信发布](https://docs.npmjs.com/trusted-publishers/)、[Go Module 发布](https://go.dev/doc/modules/publishing)、[GitHub 原生 runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)。
 
 ## 发布与回读
 
 确认候选 CI 与 npm 绑定后，创建并推送匹配版本的 Git tag。流水线将检查 tag 指向当前提交，发布同一份 npm tarball、CLI 归档和版本说明；随后从 registry 重新下载 tarball，逐字节比较并安装运行，再通过真实远端版本执行 Go consumer 与 `go install`。
+
+稳定版本同时设置 npm `latest` 与 GitHub latest release；预发布使用 npm `next`，且不替换 GitHub latest。
 
 Git tag、npm registry 与 GitHub Release 之间不存在跨系统事务。若任一步失败，立即核对 tag SHA、npm `dist.integrity`、Actions 原产物和 GitHub assets；不要移动已公开 tag、覆盖资产、取消发布旧版本或为重试更换包体。npm 已成功而后续步骤失败时，不重跑 publish；用原 run 的已验证资产恢复缺失的 GitHub Release/回读步骤，并记录实际状态。
 

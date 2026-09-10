@@ -1,6 +1,6 @@
 # OpenAPI Thrift
 
-受限 APIFox/Hertz/Thrift 契约校验与投影；Go 唯一核心供原生 CLI 与浏览器 WASM 共用，版本与升级边界见 [0.3.0-rc.1](docs/releases/v0.3.0-rc.1.md)。
+受限 APIFox/Hertz/Thrift 契约校验与投影；Go 唯一核心供原生 CLI 与浏览器 WASM 共用，版本与升级边界见 [0.3.0](docs/releases/v0.3.0.md)。
 
 - `value.go / profile.go / projector.go / thrift.go`：解析、校验、投影与渲染。
 - `cmd/openapi-thrift`：原生 CLI；`cmd/build-wasm`：固定 Go 构建；`src/`：浏览器薄绑定与类型。
@@ -8,4 +8,4 @@
 - 原生：`go run ./cmd/openapi-thrift --help`；验证：`go test -race ./... && go vet ./...`。
 - 分发：[npm / Go / 六平台 CLI](docs/distribution.md)；`go run ./cmd/release smoke-go`、`go run ./cmd/release build`、`npm run install:check -- <package.tgz>`。只有版本标签触发已验收产物发布，npm 使用 OIDC。
 - 浏览器维护：`pnpm install --frozen-lockfile`，`pnpm lint && pnpm typecheck && pnpm test && pnpm pack:check`；真实预览：`go run ./cmd/browser-preview`。
-- 修改公共 profile、Thrift 语义或 unsupported 列表先评估三仓影响；[RC 发行验收](docs/releases/unreleased/2026-09-11-ci-rc-publication.md)，后续问题见 [TODO](TODO.md)。
+- 修改公共 profile、Thrift 语义或 unsupported 列表先评估三仓影响；发布回执模拟：`npm run test:release`；[稳定发行变更](docs/releases/unreleased/2026-09-11-ci-stable-publication.md)，后续问题见 [TODO](TODO.md)。

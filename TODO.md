@@ -2,6 +2,8 @@
 
 > Active-only tracker. Completed notes belong in `docs/releases/unreleased/` or stable docs.
 
-## npm 发行回执异常
+## 稳定发行 0.3.0
 
-- [ ] 核对 npm 在版本已入库且 provenance 正确时仍返回 E401 的原因。[本轮证据与恢复结果](docs/releases/unreleased/2026-09-11-ci-rc-publication.md) 已归档；RC 三个发行入口和安装回读已完成，原 Actions publish job 保留失败事实。错误来源尚不能定位到 npm 客户端或 registry，未用 token/provenance 降级或无条件重试掩盖问题。后续发行需继续检查回执与 registry 实际状态。
+- [x] Go 核心候选通过 PR #1 合入 main，合并提交 `1f112a375adb45915e6588c1fccb5db6cde95d30`。
+- [x] 本地真实 npm 客户端复现默认 PUT 重试覆盖原始 503 为 E401；禁用发布重试时只发一次且保留真实错误。历史 RC 缺少原始 HTTP 日志，不能据此断言其 registry 根因。
+- [ ] 完成 stable 候选本地和 CI 验证，合入 main，发布 `v0.3.0` / npm `0.3.0`，核对完整自动发行与真实安装回读。
