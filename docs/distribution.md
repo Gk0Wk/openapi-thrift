@@ -40,4 +40,6 @@
 
 Git tag、npm registry 与 GitHub Release 之间不存在跨系统事务。若任一步失败，立即核对 tag SHA、npm `dist.integrity`、Actions 原产物和 GitHub assets；不要移动已公开 tag、覆盖资产、取消发布旧版本或为重试更换包体。npm 已成功而后续步骤失败时，不重跑 publish；用原 run 的已验证资产恢复缺失的 GitHub Release/回读步骤，并记录实际状态。
 
+npm 返回非零退出码也不能单独证明未入库。恢复前从 registry 获取明确版本，逐字节比较原 run 的 tarball，并通过 `npm audit signatures` 验证 registry signature 和 provenance；核对 provenance 的 workflow、tag、commit、run 与发行源一致。GitHub 恢复后核对全部资产摘要，并重新下载安装对应本机的 CLI。保留失败 run 和独立恢复记录，不将它改写成自动流水线成功。
+
 普通源码 push 不代表包已经发布。发行是否成功以对应 tag 的完整 Actions 结果、npm 版本及 GitHub Release 资产为准；此流程不迁移 backend 快照或任何真实服务。

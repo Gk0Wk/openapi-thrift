@@ -2,11 +2,6 @@
 
 > Active-only tracker. Completed notes belong in `docs/releases/unreleased/` or stable docs.
 
-## 同版本多入口发行（已批准）
+## npm 发行回执异常
 
-执行边界与隔离目录见 [brief](working-delta/distribution-20260910.md)。
-
-- [x] D1 版本与原生产物：由 package.json 冻结版本；Go CLI 版本/提交可核对；六个平台可执行文件、LICENSE、摘要与校验和。
-- [x] D2 安装验收：隔离 npm tarball 调用、独立 Go consumer、原生 CLI 正常/失败保留输出；验证发布产物，不依赖工作树 dist。
-- [x] D3 流水线：固定 action/工具，六平台运行验收，同提交 npm/Go/CLI；npm OIDC/provenance，RC 使用 next 分发标签。[实现提交 CI](https://github.com/Gk0Wk/openapi-thrift/actions/runs/34491390131) 的 13 项构建/检查全部通过。
-- [ ] D4 文档与交付：Go/npm/CLI 安装和升级说明已完成；待 npm owner 完成保存 OIDC 绑定时的安全验证，再推送版本标签、发布并核对 registry 与 Go 远端安装结果。
+- [ ] 核对 npm 在版本已入库且 provenance 正确时仍返回 E401 的原因。[本轮证据与恢复结果](docs/releases/unreleased/2026-09-11-ci-rc-publication.md) 已归档；RC 三个发行入口和安装回读已完成，原 Actions publish job 保留失败事实。错误来源尚不能定位到 npm 客户端或 registry，未用 token/provenance 降级或无条件重试掩盖问题。后续发行需继续检查回执与 registry 实际状态。

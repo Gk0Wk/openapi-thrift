@@ -44,4 +44,4 @@ npm 包继续供 JS/TS 消费；Go 开发和预编译 CLI 使用者无需 Node�
 
 实现提交 `c8b97e8d3040cf6303818e928a73a2dfe16de148` 的 [远端 CI](https://github.com/Gk0Wk/openapi-thrift/actions/runs/34491390131) 已通过全部 13 项构建/检查：六个平台分别实际解包执行原生 CLI 并编译独立 Go consumer，Node 22/24 安装并调用同一 npm tarball；普通分支的 publish 按设计跳过。
 
-发布后回读待版本标签流水线验收。npm owner 已完成进入设置页的安全验证，保存精确 OIDC 绑定时再次要求安全密钥；尚未推送版本 tag 或发布 npm/CLI。此条目不代表实际服务迁移、OS 签名/公证或生产准入。
+版本标签、npm/Go/六平台 CLI 发行及回读已完成，D1–D4 完整计划、OIDC 绑定、npm 回执异常与 GitHub 恢复证据见 [RC 发行记录](2026-09-11-ci-rc-publication.md)。此条目不代表实际服务迁移、OS 签名/公证或生产准入。

@@ -8,4 +8,4 @@
 - 原生：`go run ./cmd/openapi-thrift --help`；验证：`go test -race ./... && go vet ./...`。
 - 分发：[npm / Go / 六平台 CLI](docs/distribution.md)；`go run ./cmd/release smoke-go`、`go run ./cmd/release build`、`npm run install:check -- <package.tgz>`。只有版本标签触发已验收产物发布，npm 使用 OIDC。
 - 浏览器维护：`pnpm install --frozen-lockfile`，`pnpm lint && pnpm typecheck && pnpm test && pnpm pack:check`；真实预览：`go run ./cmd/browser-preview`。
-- 修改公共 profile、Thrift 语义或 unsupported 列表先评估三仓影响；当前迁移授权见 [TODO](TODO.md)。
+- 修改公共 profile、Thrift 语义或 unsupported 列表先评估三仓影响；[RC 发行验收](docs/releases/unreleased/2026-09-11-ci-rc-publication.md)，后续问题见 [TODO](TODO.md)。
