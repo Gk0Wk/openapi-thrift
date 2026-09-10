@@ -1,0 +1,9 @@
+# Preserve the exact shared Go core bytes across owner and backend checkouts.
+/go.mod -text
+/go.sum -text
+/LICENSE -text
+/value.go -text
+/profile.go -text
+/projector.go -text
+/thrift.go -text
+/bridge.go -text

@@ -1,0 +1,4508 @@
+{
+  "sourceCommit": "d501adc74b9083f1790e9fe126dfa950d0d2cf75",
+  "source": [
+    {
+      "name": "model",
+      "sha256": "fed942b6e82daf87d719e65b3588883ddd24b72b238066b6740ab628cdb7f2b5"
+    },
+    {
+      "name": "profile",
+      "sha256": "aa96ce0b8f3e1aa68337f68236cf475012503db80d6b6674c8947791bda5a63b"
+    },
+    {
+      "name": "projector",
+      "sha256": "5020d409421d66827a4f9acabc678889a531711f918b2d5e21ee60db702a877d"
+    },
+    {
+      "name": "thrift-route-index",
+      "sha256": "74e426bc154d1535ecaef9680b8458184e9cec83a1799a42eceefe6ea78ae650"
+    }
+  ],
+  "cases": [
+    {
+      "action": "validateOpenApiRenderDocument",
+      "args": [
+        {
+          "openapi": "3.1.0",
+          "info": {
+            "title": "Project API"
+          },
+          "paths": {
+            "/api/v1/projects/{project_id}": {
+              "get": {
+                "operationId": "getProject",
+                "tags": ["Projects"],
+                "parameters": [
+                  {
+                    "name": "project_id",
+                    "in": "path",
+                    "required": true,
+                    "example": "01KPROJECT",
+                    "schema": {
+                      "type": "string",
+                      "x-apifox-mock": "@id"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Project detail",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/Project"
+                        },
+                        "examples": {
+                          "default": {
+                            "value": {
+                              "id": "01KPROJECT",
+                              "title": "Demo project"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "components": {
+            "securitySchemes": {
+              "sessionCookie": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "ispark_session"
+              }
+            },
+            "schemas": {
+              "Project": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "example": "01KPROJECT"
+                  },
+                  "title": {
+                    "type": "string",
+                    "example": "Demo project"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "profile": "apifox-hz-thrift",
+        "issues": [],
+        "errorCount": 0,
+        "warningCount": 0,
+        "pathCount": 1,
+        "operationCount": 1,
+        "schemaCount": 1
+      }
+    },
+    {
+      "action": "validateOpenApiRenderDocument",
+      "args": [
+        {
+          "openapi": "3.1.0",
+          "info": {
+            "title": "Bad API"
+          },
+          "security": [
+            {
+              "missingAuth": []
+            }
+          ],
+          "paths": {
+            "/api/v1/search": {
+              "get": {
+                "operationId": "search",
+                "tags": ["Search"],
+                "parameters": [
+                  {
+                    "name": "filter",
+                    "in": "query",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "requestBody": {
+                  "content": {
+                    "json": {
+                      "schema": {
+                        "type": "string"
+                      },
+                      "example": {
+                        "value": "wrapped scalar"
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "example": {
+                          "ok": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "validateProjection": false
+        }
+      ],
+      "result": {
+        "profile": "apifox-hz-thrift",
+        "issues": [
+          {
+            "severity": "warning",
+            "code": "openapi.components.schemas_missing",
+            "pointer": "#/components/schemas",
+            "message": "建议使用 components.schemas 承载可复用数据模型，便于 APIFox 和 Thrift 共用引用"
+          },
+          {
+            "severity": "error",
+            "code": "auth.requirement.unresolved",
+            "pointer": "#/security/0/missingAuth",
+            "message": "security requirement 引用了不存在的 securityScheme: missingAuth"
+          },
+          {
+            "severity": "error",
+            "code": "hz.parameter_content.unsupported",
+            "pointer": "#/paths/~1api~1v1~1search/get/parameters/0/content",
+            "message": "Hz/Thrift profile 不支持 parameter.content，请改用 schema 参数"
+          },
+          {
+            "severity": "warning",
+            "code": "apifox.parameter.example_missing",
+            "pointer": "#/paths/~1api~1v1~1search/get/parameters/0",
+            "message": "APIFox 参数建议提供 example/examples；query/path-only 接口尤其需要"
+          },
+          {
+            "severity": "error",
+            "code": "hz.request_body.method",
+            "pointer": "#/paths/~1api~1v1~1search/get/requestBody",
+            "message": "GET 不允许声明 requestBody"
+          },
+          {
+            "severity": "error",
+            "code": "apifox.request_body.json_alias",
+            "pointer": "#/paths/~1api~1v1~1search/get/requestBody/content/json",
+            "message": "APIFox 稳定导出必须使用 application/json，不要使用 json 简写 content-type"
+          },
+          {
+            "severity": "error",
+            "code": "hz.request_body.content_type",
+            "pointer": "#/paths/~1api~1v1~1search/get/requestBody/content/json",
+            "message": "请求体只支持 application/json、multipart/form-data、application/x-www-form-urlencoded"
+          },
+          {
+            "severity": "error",
+            "code": "apifox.example.schema_mismatch",
+            "pointer": "#/paths/~1api~1v1~1search/get/requestBody/content/json/example",
+            "message": "example 类型与 schema 不匹配，期望 string"
+          }
+        ],
+        "errorCount": 6,
+        "warningCount": 2,
+        "pathCount": 1,
+        "operationCount": 1,
+        "schemaCount": 0
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Project API"
+          },
+          "paths": {
+            "/api/v1/projects/{project_id}": {
+              "get": {
+                "operationId": "getProject",
+                "summary": "Get project detail",
+                "parameters": [
+                  {
+                    "name": "project_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  },
+                  {
+                    "name": "include_jobs",
+                    "in": "query",
+                    "schema": {
+                      "type": "boolean"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Project detail",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/Project"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "/api/v1/projects": {
+              "post": {
+                "operationId": "createProject",
+                "summary": "Create project",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "required": ["title"],
+                        "properties": {
+                          "title": {
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "properties": {
+                              "locale": {
+                                "type": "string",
+                                "enum": ["zh-CN", "en-US"]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Created project",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/Project"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "components": {
+            "schemas": {
+              "Project": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "namespace": "ispark.project",
+          "serviceName": "ProjectService"
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.project",
+          "serviceName": "ProjectService",
+          "definitions": [
+            {
+              "name": "CreateProjectRequestMetadata",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "locale",
+                  "annotations": ["go.tag='validate:\"oneof=zh-CN en-US\"'"]
+                }
+              ]
+            },
+            {
+              "name": "CreateProjectRequest",
+              "comment": ["Create project"],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "title",
+                  "annotations": [
+                    "api.body=\"title\"",
+                    "go.tag='validate:\"required\"'"
+                  ]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "CreateProjectRequestMetadata",
+                  "name": "metadata",
+                  "annotations": ["api.body=\"metadata\""]
+                }
+              ]
+            },
+            {
+              "name": "Project",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "id",
+                  "annotations": []
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "title",
+                  "annotations": []
+                }
+              ]
+            },
+            {
+              "name": "GetProjectRequest",
+              "comment": ["Get project detail"],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "required",
+                  "type": "string",
+                  "name": "project_id",
+                  "annotations": ["api.path=\"project_id\""]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "include_jobs",
+                  "annotations": ["api.query=\"include_jobs\""]
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "CreateProject",
+              "requestType": "CreateProjectRequest",
+              "responseType": "Project",
+              "httpMethod": "post",
+              "path": "/api/v1/projects",
+              "comment": ["Create project"]
+            },
+            {
+              "name": "GetProject",
+              "requestType": "GetProjectRequest",
+              "responseType": "Project",
+              "httpMethod": "get",
+              "path": "/api/v1/projects/:project_id",
+              "comment": ["Get project detail"]
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.project\n\nstruct CreateProjectRequestMetadata {\n  1: optional string locale (go.tag='validate:\"oneof=zh-CN en-US\"')\n}\n\n// Create project\nstruct CreateProjectRequest {\n  1: optional string title (api.body=\"title\", go.tag='validate:\"required\"')\n  2: optional CreateProjectRequestMetadata metadata (api.body=\"metadata\")\n}\n\nstruct Project {\n  1: optional string id\n  2: optional string title\n}\n\n// Get project detail\nstruct GetProjectRequest {\n  1: required string project_id (api.path=\"project_id\")\n  2: optional bool include_jobs (api.query=\"include_jobs\")\n}\n\nservice ProjectService {\n  // Create project\n  Project CreateProject(1: CreateProjectRequest req) (api.post=\"/api/v1/projects\")\n  // Get project detail\n  Project GetProject(1: GetProjectRequest req) (api.get=\"/api/v1/projects/:project_id\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.1.0",
+          "info": {
+            "title": "Project API"
+          },
+          "paths": {
+            "/api/v1/ping": {
+              "get": {
+                "operationId": "ping",
+                "responses": {
+                  "200": {
+                    "description": "pong",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "namespace": "ispark.project",
+          "serviceName": "ProjectService"
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.project",
+          "serviceName": "ProjectService",
+          "definitions": [
+            {
+              "name": "PingRequest",
+              "fields": []
+            },
+            {
+              "name": "PingResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "Ping",
+              "requestType": "PingRequest",
+              "responseType": "PingResponse",
+              "httpMethod": "get",
+              "path": "/api/v1/ping"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.project\n\nstruct PingRequest {\n}\n\nstruct PingResponse {\n  1: optional bool ok\n}\n\nservice ProjectService {\n  PingResponse Ping(1: PingRequest req) (api.get=\"/api/v1/ping\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Bad API"
+          },
+          "paths": {
+            "/api/v1/bad": {
+              "post": {
+                "operationId": "badOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "oneOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 oneOf (/api/v1/bad.post.requestBody)",
+        "pointer": "/api/v1/bad.post.requestBody"
+      }
+    },
+    {
+      "action": "extractRouteMethodNameMapFromThriftSources",
+      "args": [
+        [
+          {
+            "path": "auth.thrift",
+            "content": "service AuthService {\n  WxLoginResponse WxLogin(1: WxLoginRequest req) (api.post=\"/api/v1/auth/wx-login\")\n}\n"
+          }
+        ]
+      ],
+      "result": {
+        "POST /api/v1/auth/wx-login": "WxLogin"
+      }
+    },
+    {
+      "action": "buildRouteKey",
+      "args": ["post", "/api/v1/auth/wx-login"],
+      "result": "POST /api/v1/auth/wx-login"
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "JobSeek API"
+          },
+          "paths": {
+            "/api/v1/auth/wx-login": {
+              "post": {
+                "summary": "微信登录",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "redirect_url": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "qr_code": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "routeMethodNames": {
+            "POST /api/v1/auth/wx-login": "WxLogin"
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "JobSeekAPIService",
+          "definitions": [
+            {
+              "name": "WxLoginRequest",
+              "comment": ["微信登录"],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "redirect_url",
+                  "annotations": ["api.body=\"redirect_url\""]
+                }
+              ]
+            },
+            {
+              "name": "WxLoginResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "qr_code",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "WxLogin",
+              "requestType": "WxLoginRequest",
+              "responseType": "WxLoginResponse",
+              "httpMethod": "post",
+              "path": "/api/v1/auth/wx-login",
+              "comment": ["微信登录"]
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\n// 微信登录\nstruct WxLoginRequest {\n  1: optional string redirect_url (api.body=\"redirect_url\")\n}\n\nstruct WxLoginResponse {\n  1: optional string qr_code\n}\n\nservice JobSeekAPIService {\n  // 微信登录\n  WxLoginResponse WxLogin(1: WxLoginRequest req) (api.post=\"/api/v1/auth/wx-login\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Scalar Body API"
+          },
+          "paths": {
+            "/api/v1/demands/search": {
+              "post": {
+                "operationId": "SearchDemands",
+                "requestBody": {
+                  "required": true,
+                  "content": {
+                    "json": {
+                      "schema": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "ScalarBodyAPIService",
+          "definitions": [
+            {
+              "name": "SearchDemandsRequest",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "body",
+                  "annotations": [
+                    "api.raw_body=\"\"",
+                    "go.tag='validate:\"required\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "SearchDemandsResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "SearchDemands",
+              "requestType": "SearchDemandsRequest",
+              "responseType": "SearchDemandsResponse",
+              "httpMethod": "post",
+              "path": "/api/v1/demands/search"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct SearchDemandsRequest {\n  1: optional string body (api.raw_body=\"\", go.tag='validate:\"required\"')\n}\n\nstruct SearchDemandsResponse {\n  1: optional bool ok\n}\n\nservice ScalarBodyAPIService {\n  SearchDemandsResponse SearchDemands(1: SearchDemandsRequest req) (api.post=\"/api/v1/demands/search\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Query Array API"
+          },
+          "paths": {
+            "/api/v1/media/urls": {
+              "get": {
+                "operationId": "GetMediaUrls",
+                "parameters": [
+                  {
+                    "name": "file_paths",
+                    "in": "query",
+                    "required": true,
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "QueryArrayAPIService",
+          "definitions": [
+            {
+              "name": "GetMediaUrlsRequest",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "list<string>",
+                  "name": "file_paths",
+                  "annotations": [
+                    "api.query=\"file_paths\"",
+                    "go.tag='validate:\"required\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "GetMediaUrlsResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "GetMediaUrls",
+              "requestType": "GetMediaUrlsRequest",
+              "responseType": "GetMediaUrlsResponse",
+              "httpMethod": "get",
+              "path": "/api/v1/media/urls"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct GetMediaUrlsRequest {\n  1: optional list<string> file_paths (api.query=\"file_paths\", go.tag='validate:\"required\"')\n}\n\nstruct GetMediaUrlsResponse {\n  1: optional bool ok\n}\n\nservice QueryArrayAPIService {\n  GetMediaUrlsResponse GetMediaUrls(1: GetMediaUrlsRequest req) (api.get=\"/api/v1/media/urls\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Auth Meta API"
+          },
+          "paths": {
+            "/api/v1/profile": {
+              "get": {
+                "operationId": "GetProfile",
+                "parameters": [
+                  {
+                    "name": "X-Request-ID",
+                    "in": "header",
+                    "required": true,
+                    "schema": {
+                      "type": "string",
+                      "minLength": 16,
+                      "maxLength": 64
+                    }
+                  },
+                  {
+                    "name": "csrf_token",
+                    "in": "cookie",
+                    "schema": {
+                      "type": "string",
+                      "minLength": 8
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "AuthMetaAPIService",
+          "definitions": [
+            {
+              "name": "GetProfileRequest",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "x_request_id",
+                  "annotations": [
+                    "api.header=\"X-Request-ID\"",
+                    "go.tag='validate:\"required,min=16,max=64\"'"
+                  ]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "csrf_token",
+                  "annotations": [
+                    "api.cookie=\"csrf_token\"",
+                    "go.tag='validate:\"min=8\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "GetProfileResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "GetProfile",
+              "requestType": "GetProfileRequest",
+              "responseType": "GetProfileResponse",
+              "httpMethod": "get",
+              "path": "/api/v1/profile"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct GetProfileRequest {\n  1: optional string x_request_id (api.header=\"X-Request-ID\", go.tag='validate:\"required,min=16,max=64\"')\n  2: optional string csrf_token (api.cookie=\"csrf_token\", go.tag='validate:\"min=8\"')\n}\n\nstruct GetProfileResponse {\n  1: optional bool ok\n}\n\nservice AuthMetaAPIService {\n  GetProfileResponse GetProfile(1: GetProfileRequest req) (api.get=\"/api/v1/profile\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Delete API"
+          },
+          "paths": {
+            "/api/v1/items/{item_id}": {
+              "delete": {
+                "operationId": "DeleteItem",
+                "parameters": [
+                  {
+                    "name": "item_id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "204": {
+                    "description": "deleted"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "DeleteAPIService",
+          "definitions": [
+            {
+              "name": "DeleteItemRequest",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "required",
+                  "type": "string",
+                  "name": "item_id",
+                  "annotations": ["api.path=\"item_id\""]
+                }
+              ]
+            },
+            {
+              "name": "EmptyResponse",
+              "comment": ["HTTP 2xx with no JSON response body."],
+              "fields": []
+            }
+          ],
+          "methods": [
+            {
+              "name": "DeleteItem",
+              "requestType": "DeleteItemRequest",
+              "responseType": "EmptyResponse",
+              "httpMethod": "delete",
+              "path": "/api/v1/items/:item_id"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct DeleteItemRequest {\n  1: required string item_id (api.path=\"item_id\")\n}\n\n// HTTP 2xx with no JSON response body.\nstruct EmptyResponse {\n}\n\nservice DeleteAPIService {\n  EmptyResponse DeleteItem(1: DeleteItemRequest req) (api.delete=\"/api/v1/items/:item_id\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Deep Query API"
+          },
+          "paths": {
+            "/api/v1/search": {
+              "get": {
+                "operationId": "Search",
+                "parameters": [
+                  {
+                    "name": "filter",
+                    "in": "query",
+                    "style": "deepObject",
+                    "explode": true,
+                    "schema": {
+                      "type": "object",
+                      "properties": {
+                        "city": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 deepObject query 参数，请改为简单字段或手写 transport (/api/v1/search.query.filter)",
+        "pointer": "/api/v1/search.query.filter"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Delimited Query API"
+          },
+          "paths": {
+            "/api/v1/search": {
+              "get": {
+                "operationId": "SearchDelimited",
+                "parameters": [
+                  {
+                    "name": "ids",
+                    "in": "query",
+                    "style": "pipeDelimited",
+                    "explode": false,
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 pipeDelimited query 参数序列化，请改为默认 form/explode 语义 (/api/v1/search.query.ids)",
+        "pointer": "/api/v1/search.query.ids"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Parameter Content API"
+          },
+          "paths": {
+            "/api/v1/search": {
+              "get": {
+                "operationId": "SearchByContent",
+                "parameters": [
+                  {
+                    "name": "filter",
+                    "in": "query",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "city": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 parameter content，请改为 schema 参数或手写 transport (/api/v1/search.query.filter)",
+        "pointer": "/api/v1/search.query.filter"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Validation API"
+          },
+          "paths": {
+            "/api/v1/teachers": {
+              "post": {
+                "operationId": "CreateTeacher",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "required": ["profile"],
+                        "properties": {
+                          "age": {
+                            "type": "integer",
+                            "minimum": 18,
+                            "maximum": 65
+                          },
+                          "nickname": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 20
+                          },
+                          "tags": {
+                            "type": "array",
+                            "minItems": 1,
+                            "maxItems": 5,
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "email": {
+                            "type": "string",
+                            "format": "email"
+                          },
+                          "homepage": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "host": {
+                            "type": "string",
+                            "format": "hostname"
+                          },
+                          "phone": {
+                            "type": "string",
+                            "format": "e164"
+                          },
+                          "birthday": {
+                            "type": "string",
+                            "format": "date"
+                          },
+                          "submitted_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "session_token": {
+                            "type": "string",
+                            "format": "jwt"
+                          },
+                          "profile": {
+                            "$ref": "#/components/schemas/Profile"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "components": {
+            "schemas": {
+              "Profile": {
+                "type": "object",
+                "properties": {
+                  "bio": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "ValidationAPIService",
+          "definitions": [
+            {
+              "name": "Profile",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "bio",
+                  "annotations": []
+                }
+              ]
+            },
+            {
+              "name": "CreateTeacherRequest",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "i32",
+                  "name": "age",
+                  "annotations": [
+                    "api.body=\"age\"",
+                    "go.tag='validate:\"gte=18,lte=65\"'"
+                  ]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "nickname",
+                  "annotations": [
+                    "api.body=\"nickname\"",
+                    "go.tag='validate:\"min=2,max=20\"'"
+                  ]
+                },
+                {
+                  "id": 3,
+                  "requiredness": "optional",
+                  "type": "list<string>",
+                  "name": "tags",
+                  "annotations": [
+                    "api.body=\"tags\"",
+                    "go.tag='validate:\"min=1,max=5\"'"
+                  ]
+                },
+                {
+                  "id": 4,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "email",
+                  "annotations": [
+                    "api.body=\"email\"",
+                    "go.tag='validate:\"email\"'"
+                  ]
+                },
+                {
+                  "id": 5,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "homepage",
+                  "annotations": [
+                    "api.body=\"homepage\"",
+                    "go.tag='validate:\"uri\"'"
+                  ]
+                },
+                {
+                  "id": 6,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "host",
+                  "annotations": [
+                    "api.body=\"host\"",
+                    "go.tag='validate:\"hostname_rfc1123\"'"
+                  ]
+                },
+                {
+                  "id": 7,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "phone",
+                  "annotations": [
+                    "api.body=\"phone\"",
+                    "go.tag='validate:\"e164\"'"
+                  ]
+                },
+                {
+                  "id": 8,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "birthday",
+                  "annotations": [
+                    "api.body=\"birthday\"",
+                    "go.tag='validate:\"datetime=2006-01-02\"'"
+                  ]
+                },
+                {
+                  "id": 9,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "submitted_at",
+                  "annotations": [
+                    "api.body=\"submitted_at\"",
+                    "go.tag='validate:\"datetime=2006-01-02T15:04:05Z07:00\"'"
+                  ]
+                },
+                {
+                  "id": 10,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "session_token",
+                  "annotations": [
+                    "api.body=\"session_token\"",
+                    "go.tag='validate:\"jwt\"'"
+                  ]
+                },
+                {
+                  "id": 11,
+                  "requiredness": "optional",
+                  "type": "Profile",
+                  "name": "profile",
+                  "annotations": [
+                    "api.body=\"profile\"",
+                    "go.tag='validate:\"required\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "CreateTeacherResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "CreateTeacher",
+              "requestType": "CreateTeacherRequest",
+              "responseType": "CreateTeacherResponse",
+              "httpMethod": "post",
+              "path": "/api/v1/teachers"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct Profile {\n  1: optional string bio\n}\n\nstruct CreateTeacherRequest {\n  1: optional i32 age (api.body=\"age\", go.tag='validate:\"gte=18,lte=65\"')\n  2: optional string nickname (api.body=\"nickname\", go.tag='validate:\"min=2,max=20\"')\n  3: optional list<string> tags (api.body=\"tags\", go.tag='validate:\"min=1,max=5\"')\n  4: optional string email (api.body=\"email\", go.tag='validate:\"email\"')\n  5: optional string homepage (api.body=\"homepage\", go.tag='validate:\"uri\"')\n  6: optional string host (api.body=\"host\", go.tag='validate:\"hostname_rfc1123\"')\n  7: optional string phone (api.body=\"phone\", go.tag='validate:\"e164\"')\n  8: optional string birthday (api.body=\"birthday\", go.tag='validate:\"datetime=2006-01-02\"')\n  9: optional string submitted_at (api.body=\"submitted_at\", go.tag='validate:\"datetime=2006-01-02T15:04:05Z07:00\"')\n  10: optional string session_token (api.body=\"session_token\", go.tag='validate:\"jwt\"')\n  11: optional Profile profile (api.body=\"profile\", go.tag='validate:\"required\"')\n}\n\nstruct CreateTeacherResponse {\n  1: optional bool ok\n}\n\nservice ValidationAPIService {\n  CreateTeacherResponse CreateTeacher(1: CreateTeacherRequest req) (api.post=\"/api/v1/teachers\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Numeric Format API"
+          },
+          "paths": {
+            "/api/v1/metrics": {
+              "post": {
+                "operationId": "CreateMetric",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "score": {
+                            "type": "number",
+                            "format": "float"
+                          },
+                          "total": {
+                            "type": "integer",
+                            "format": "int64"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "NumericFormatAPIService",
+          "definitions": [
+            {
+              "name": "CreateMetricRequest",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "double",
+                  "name": "score",
+                  "annotations": ["api.body=\"score\""]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "i64",
+                  "name": "total",
+                  "annotations": ["api.body=\"total\""]
+                }
+              ]
+            },
+            {
+              "name": "CreateMetricResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "CreateMetric",
+              "requestType": "CreateMetricRequest",
+              "responseType": "CreateMetricResponse",
+              "httpMethod": "post",
+              "path": "/api/v1/metrics"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct CreateMetricRequest {\n  1: optional double score (api.body=\"score\")\n  2: optional i64 total (api.body=\"total\")\n}\n\nstruct CreateMetricResponse {\n  1: optional bool ok\n}\n\nservice NumericFormatAPIService {\n  CreateMetricResponse CreateMetric(1: CreateMetricRequest req) (api.post=\"/api/v1/metrics\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Format API"
+          },
+          "paths": {
+            "/api/v1/format": {
+              "post": {
+                "operationId": "FormatOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "secret": {
+                            "type": "string",
+                            "format": "password"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 format=password 自动投影，请改为手写 validator 或收紧 schema (/api/v1/format.post.requestBody.secret)",
+        "pointer": "/api/v1/format.post.requestBody.secret"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Parameter Ref API"
+          },
+          "paths": {
+            "/api/v1/ref": {
+              "get": {
+                "operationId": "GetByRef",
+                "parameters": [
+                  {
+                    "$ref": "#/components/parameters/Keyword"
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "第一版暂不支持 parameter $ref，请在导出前展开参数 (/api/v1/ref#parameters[0])",
+        "pointer": "/api/v1/ref#parameters[0]"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Request Body Ref API"
+          },
+          "paths": {
+            "/api/v1/ref-body": {
+              "post": {
+                "operationId": "PostByRef",
+                "requestBody": {
+                  "$ref": "#/components/requestBodies/CreateBody"
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "components": {
+            "requestBodies": {
+              "CreateBody": {
+                "required": true,
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "object",
+                      "required": ["title"],
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "RequestBodyRefAPIService",
+          "definitions": [
+            {
+              "name": "PostByRefRequest",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "title",
+                  "annotations": [
+                    "api.body=\"title\"",
+                    "go.tag='validate:\"required,min=1\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "PostByRefResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "PostByRef",
+              "requestType": "PostByRefRequest",
+              "responseType": "PostByRefResponse",
+              "httpMethod": "post",
+              "path": "/api/v1/ref-body"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct PostByRefRequest {\n  1: optional string title (api.body=\"title\", go.tag='validate:\"required,min=1\"')\n}\n\nstruct PostByRefResponse {\n  1: optional bool ok\n}\n\nservice RequestBodyRefAPIService {\n  PostByRefResponse PostByRef(1: PostByRefRequest req) (api.post=\"/api/v1/ref-body\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.1",
+          "info": {
+            "title": "ISpark OpenAPI Thrift Boundary Lab Supported Subset",
+            "description": "Derived from the live APIFox boundary export. Keeps only the routes that are currently within the supported OpenAPI Render profile.",
+            "version": "0.1.0"
+          },
+          "tags": [],
+          "paths": {
+            "/v1/lab/preferences": {
+              "post": {
+                "summary": "Update preferences via form-urlencoded",
+                "deprecated": false,
+                "description": "",
+                "operationId": "UpdatePreferences",
+                "tags": [],
+                "parameters": [],
+                "requestBody": {
+                  "content": {
+                    "application/x-www-form-urlencoded": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "theme": {
+                            "type": "string",
+                            "enum": ["light", "dark", "system"],
+                            "default": "system",
+                            "example": "system"
+                          },
+                          "timezone": {
+                            "type": "string",
+                            "minLength": 3,
+                            "maxLength": 64,
+                            "example": ""
+                          },
+                          "daily_digest": {
+                            "type": "boolean",
+                            "default": false,
+                            "example": "false"
+                          },
+                          "weekly_limit": {
+                            "type": "integer",
+                            "format": "int32",
+                            "minimum": 1,
+                            "maximum": 50,
+                            "default": 20,
+                            "example": 20
+                          }
+                        },
+                        "required": ["theme", "timezone"]
+                      }
+                    }
+                  },
+                  "required": true
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/OkResponse"
+                        }
+                      }
+                    },
+                    "headers": {},
+                    "x-apifox-ordering": 0
+                  }
+                },
+                "security": [],
+                "x-apifox-folder": "",
+                "x-apifox-status": "released",
+                "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000799-run"
+              }
+            },
+            "/v1/lab/uploads/meta": {
+              "post": {
+                "summary": "Prepare upload metadata via multipart form",
+                "deprecated": false,
+                "description": "",
+                "operationId": "PrepareUploadMeta",
+                "tags": [],
+                "parameters": [],
+                "requestBody": {
+                  "content": {
+                    "multipart/form-data": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "bucket": {
+                            "type": "string",
+                            "minLength": 3,
+                            "maxLength": 32,
+                            "example": ""
+                          },
+                          "object_key": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 128,
+                            "example": ""
+                          },
+                          "checksum": {
+                            "type": "string",
+                            "minLength": 8,
+                            "maxLength": 128,
+                            "example": ""
+                          },
+                          "content_type": {
+                            "type": "string",
+                            "enum": [
+                              "image/png",
+                              "image/jpeg",
+                              "application/pdf"
+                            ],
+                            "example": ""
+                          },
+                          "size_bytes": {
+                            "type": "integer",
+                            "format": "int64",
+                            "minimum": 1,
+                            "maximum": 10485760,
+                            "example": 0
+                          }
+                        },
+                        "required": [
+                          "bucket",
+                          "object_key",
+                          "content_type",
+                          "size_bytes"
+                        ]
+                      }
+                    }
+                  },
+                  "required": true
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/UploadMetaResponse"
+                        }
+                      }
+                    },
+                    "headers": {},
+                    "x-apifox-ordering": 0
+                  }
+                },
+                "security": [],
+                "x-apifox-folder": "",
+                "x-apifox-status": "released",
+                "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000800-run"
+              }
+            },
+            "/v1/lab/search": {
+              "get": {
+                "summary": "Search profiles with repeated-key query array",
+                "deprecated": false,
+                "description": "",
+                "operationId": "SearchProfiles",
+                "tags": [],
+                "parameters": [
+                  {
+                    "name": "debug_token",
+                    "in": "cookie",
+                    "description": "",
+                    "required": false,
+                    "example": "",
+                    "schema": {
+                      "type": "string",
+                      "minLength": 8,
+                      "maxLength": 64
+                    }
+                  },
+                  {
+                    "name": "keyword",
+                    "in": "query",
+                    "description": "",
+                    "required": true,
+                    "schema": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32
+                    }
+                  },
+                  {
+                    "name": "tags",
+                    "in": "query",
+                    "description": "",
+                    "required": false,
+                    "schema": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 5,
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 16
+                      }
+                    }
+                  },
+                  {
+                    "name": "page_size",
+                    "in": "query",
+                    "description": "",
+                    "required": false,
+                    "schema": {
+                      "type": "integer",
+                      "format": "int32",
+                      "minimum": 1,
+                      "maximum": 50,
+                      "default": 20
+                    }
+                  },
+                  {
+                    "name": "X-Request-Id",
+                    "in": "header",
+                    "description": "",
+                    "required": true,
+                    "example": "",
+                    "schema": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/SearchProfilesResponse"
+                        }
+                      }
+                    },
+                    "headers": {},
+                    "x-apifox-ordering": 0
+                  }
+                },
+                "security": [],
+                "x-apifox-folder": "",
+                "x-apifox-status": "released",
+                "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000801-run"
+              }
+            },
+            "/v1/lab/raw-json": {
+              "post": {
+                "summary": "Top-level scalar requestBody fallback",
+                "deprecated": false,
+                "description": "",
+                "operationId": "ValidateRawJson",
+                "tags": [],
+                "parameters": [],
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "string",
+                        "format": "json"
+                      }
+                    }
+                  },
+                  "required": true
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/OkResponse"
+                        }
+                      }
+                    },
+                    "headers": {},
+                    "x-apifox-ordering": 0
+                  }
+                },
+                "security": [],
+                "x-apifox-folder": "",
+                "x-apifox-status": "released",
+                "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000802-run"
+              }
+            },
+            "/v1/lab/mutation/nullable-anyof": {
+              "post": {
+                "summary": "Mutation target: nullable anyOf",
+                "deprecated": false,
+                "description": "",
+                "operationId": "NullableAnyOfCandidate",
+                "tags": [],
+                "parameters": [],
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/MutationNullablePayload"
+                      }
+                    }
+                  },
+                  "required": true
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/MutationNullableResponse"
+                        }
+                      }
+                    },
+                    "headers": {},
+                    "x-apifox-ordering": 0
+                  }
+                },
+                "security": [],
+                "x-apifox-folder": "",
+                "x-apifox-status": "released",
+                "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000806-run"
+              }
+            },
+            "/v1/lab/mutation/query-object": {
+              "get": {
+                "summary": "Mutation target: object query or deepObject",
+                "deprecated": false,
+                "description": "",
+                "operationId": "QueryObjectCandidate",
+                "tags": [],
+                "parameters": [
+                  {
+                    "name": "filter_keyword",
+                    "in": "query",
+                    "description": "",
+                    "required": false,
+                    "schema": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 32
+                    }
+                  },
+                  {
+                    "name": "limit",
+                    "in": "query",
+                    "description": "",
+                    "required": false,
+                    "schema": {
+                      "type": "integer",
+                      "format": "int32",
+                      "minimum": 1,
+                      "maximum": 10,
+                      "default": 5
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/OkResponse"
+                        }
+                      }
+                    },
+                    "headers": {},
+                    "x-apifox-ordering": 0
+                  }
+                },
+                "security": [],
+                "x-apifox-folder": "",
+                "x-apifox-status": "released",
+                "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000808-run"
+              }
+            },
+            "/v1/lab/mutation/query-array": {
+              "get": {
+                "summary": "Mutation target: non-default query array serialization",
+                "deprecated": false,
+                "description": "",
+                "operationId": "QueryArrayCandidate",
+                "tags": [],
+                "parameters": [
+                  {
+                    "name": "tags",
+                    "in": "query",
+                    "description": "",
+                    "required": false,
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 16
+                      }
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/OkResponse"
+                        }
+                      }
+                    },
+                    "headers": {},
+                    "x-apifox-ordering": 0
+                  }
+                },
+                "security": [],
+                "x-apifox-folder": "",
+                "x-apifox-status": "released",
+                "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000809-run"
+              }
+            },
+            "/v1/lab/mutation/ref-parameter/{item_id}": {
+              "get": {
+                "summary": "Mutation target: parameter $ref",
+                "deprecated": false,
+                "description": "",
+                "operationId": "RefParameterCandidate",
+                "tags": [],
+                "parameters": [
+                  {
+                    "name": "item_id",
+                    "in": "path",
+                    "description": "",
+                    "required": true,
+                    "example": "",
+                    "schema": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  {
+                    "name": "locale",
+                    "in": "query",
+                    "description": "",
+                    "required": false,
+                    "schema": {
+                      "type": "string",
+                      "enum": ["zh-CN", "en-US"],
+                      "default": "zh-CN"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/OkResponse"
+                        }
+                      }
+                    },
+                    "headers": {},
+                    "x-apifox-ordering": 0
+                  }
+                },
+                "security": [],
+                "x-apifox-folder": "",
+                "x-apifox-status": "released",
+                "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000812-run"
+              }
+            },
+            "/v1/lab/mutation/multi-2xx": {
+              "get": {
+                "summary": "Mutation target: multiple success responses",
+                "deprecated": false,
+                "description": "",
+                "operationId": "Multi2xxCandidate",
+                "tags": [],
+                "parameters": [],
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "$ref": "#/components/schemas/OkResponse"
+                        }
+                      }
+                    },
+                    "headers": {},
+                    "x-apifox-ordering": 0
+                  }
+                },
+                "security": [],
+                "x-apifox-folder": "",
+                "x-apifox-status": "released",
+                "x-run-in-apifox": "https://app.apifox.com/web/project/8094364/apis/api-442000813-run"
+              }
+            }
+          },
+          "components": {
+            "schemas": {
+              "OkResponse": {
+                "type": "object",
+                "required": ["ok", "request_id"],
+                "properties": {
+                  "ok": {
+                    "type": "boolean"
+                  },
+                  "request_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "x-apifox-orders": ["ok", "request_id"],
+                "x-apifox-ignore-properties": [],
+                "x-apifox-folder": ""
+              },
+              "UploadMetaResponse": {
+                "type": "object",
+                "required": ["upload_token", "expires_at"],
+                "properties": {
+                  "upload_token": {
+                    "type": "string",
+                    "format": "base64"
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "x-apifox-orders": ["upload_token", "expires_at"],
+                "x-apifox-ignore-properties": [],
+                "x-apifox-folder": ""
+              },
+              "SearchProfilesResponse": {
+                "type": "object",
+                "required": ["total", "items"],
+                "properties": {
+                  "total": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/ProfileSummary"
+                    }
+                  }
+                },
+                "x-apifox-orders": ["total", "items"],
+                "x-apifox-ignore-properties": [],
+                "x-apifox-folder": ""
+              },
+              "MutationNullablePayload": {
+                "type": "object",
+                "required": ["nickname"],
+                "properties": {
+                  "nickname": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 16,
+                    "nullable": true
+                  }
+                },
+                "x-apifox-orders": ["nickname"],
+                "x-apifox-ignore-properties": [],
+                "x-apifox-folder": ""
+              },
+              "MutationNullableResponse": {
+                "type": "object",
+                "required": ["nickname"],
+                "properties": {
+                  "nickname": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 16,
+                    "nullable": true
+                  }
+                },
+                "x-apifox-orders": ["nickname"],
+                "x-apifox-ignore-properties": [],
+                "x-apifox-folder": ""
+              },
+              "ProfileSummary": {
+                "type": "object",
+                "required": ["profile_id", "display_name", "role"],
+                "properties": {
+                  "profile_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "display_name": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["user", "admin", "reviewer"]
+                  }
+                },
+                "x-apifox-orders": ["profile_id", "display_name", "role"],
+                "x-apifox-ignore-properties": [],
+                "x-apifox-folder": ""
+              }
+            },
+            "responses": {},
+            "securitySchemes": {}
+          },
+          "servers": [],
+          "security": []
+        },
+        {
+          "namespace": "ispark.boundarylab.supported",
+          "serviceName": "BoundaryLabSupportedService"
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.boundarylab.supported",
+          "serviceName": "BoundaryLabSupportedService",
+          "definitions": [
+            {
+              "name": "Multi2xxCandidateRequest",
+              "comment": ["Mutation target: multiple success responses"],
+              "fields": []
+            },
+            {
+              "name": "OkResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": ["go.tag='validate:\"required\"'"]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "request_id",
+                  "annotations": ["go.tag='validate:\"required,uuid\"'"]
+                }
+              ]
+            },
+            {
+              "name": "NullableAnyOfCandidateRequest",
+              "comment": ["Mutation target: nullable anyOf"],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "nickname",
+                  "annotations": [
+                    "api.body=\"nickname\"",
+                    "go.tag='validate:\"required,min=2,max=16\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "MutationNullableResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "nickname",
+                  "annotations": ["go.tag='validate:\"required,min=2,max=16\"'"]
+                }
+              ]
+            },
+            {
+              "name": "QueryArrayCandidateRequest",
+              "comment": [
+                "Mutation target: non-default query array serialization"
+              ],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "list<string>",
+                  "name": "tags",
+                  "annotations": ["api.query=\"tags\""]
+                }
+              ]
+            },
+            {
+              "name": "QueryObjectCandidateRequest",
+              "comment": ["Mutation target: object query or deepObject"],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "filter_keyword",
+                  "annotations": [
+                    "api.query=\"filter_keyword\"",
+                    "go.tag='validate:\"min=1,max=32\"'"
+                  ]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "i32",
+                  "name": "limit",
+                  "annotations": [
+                    "api.query=\"limit\"",
+                    "go.tag='default:\"5\" validate:\"gte=1,lte=10\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "RefParameterCandidateRequest",
+              "comment": ["Mutation target: parameter $ref"],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "required",
+                  "type": "string",
+                  "name": "item_id",
+                  "annotations": [
+                    "api.path=\"item_id\"",
+                    "go.tag='validate:\"uuid\"'"
+                  ]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "locale",
+                  "annotations": [
+                    "api.query=\"locale\"",
+                    "go.tag='default:\"zh-CN\" validate:\"oneof=zh-CN en-US\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "UpdatePreferencesRequest",
+              "comment": ["Update preferences via form-urlencoded"],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "theme",
+                  "annotations": [
+                    "api.form=\"theme\"",
+                    "go.tag='default:\"system\" validate:\"required,oneof=light dark system\"'"
+                  ]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "timezone",
+                  "annotations": [
+                    "api.form=\"timezone\"",
+                    "go.tag='validate:\"required,min=3,max=64\"'"
+                  ]
+                },
+                {
+                  "id": 3,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "daily_digest",
+                  "annotations": [
+                    "api.form=\"daily_digest\"",
+                    "go.tag='default:\"false\"'"
+                  ]
+                },
+                {
+                  "id": 4,
+                  "requiredness": "optional",
+                  "type": "i32",
+                  "name": "weekly_limit",
+                  "annotations": [
+                    "api.form=\"weekly_limit\"",
+                    "go.tag='default:\"20\" validate:\"gte=1,lte=50\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "ValidateRawJsonRequest",
+              "comment": ["Top-level scalar requestBody fallback"],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "body",
+                  "annotations": [
+                    "api.raw_body=\"\"",
+                    "go.tag='validate:\"required,json\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "SearchProfilesRequest",
+              "comment": ["Search profiles with repeated-key query array"],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "debug_token",
+                  "annotations": [
+                    "api.cookie=\"debug_token\"",
+                    "go.tag='validate:\"min=8,max=64\"'"
+                  ]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "keyword",
+                  "annotations": [
+                    "api.query=\"keyword\"",
+                    "go.tag='validate:\"required,min=1,max=32\"'"
+                  ]
+                },
+                {
+                  "id": 3,
+                  "requiredness": "optional",
+                  "type": "list<string>",
+                  "name": "tags",
+                  "annotations": [
+                    "api.query=\"tags\"",
+                    "go.tag='validate:\"min=1,max=5\"'"
+                  ]
+                },
+                {
+                  "id": 4,
+                  "requiredness": "optional",
+                  "type": "i32",
+                  "name": "page_size",
+                  "annotations": [
+                    "api.query=\"page_size\"",
+                    "go.tag='default:\"20\" validate:\"gte=1,lte=50\"'"
+                  ]
+                },
+                {
+                  "id": 5,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "x_request_id",
+                  "annotations": [
+                    "api.header=\"X-Request-Id\"",
+                    "go.tag='validate:\"required,uuid\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "ProfileSummary",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "profile_id",
+                  "annotations": ["go.tag='validate:\"required,uuid\"'"]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "display_name",
+                  "annotations": ["go.tag='validate:\"required\"'"]
+                },
+                {
+                  "id": 3,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "role",
+                  "annotations": [
+                    "go.tag='validate:\"required,oneof=user admin reviewer\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "SearchProfilesResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "i32",
+                  "name": "total",
+                  "annotations": ["go.tag='validate:\"required,gte=0\"'"]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "list<ProfileSummary>",
+                  "name": "items",
+                  "annotations": ["go.tag='validate:\"required\"'"]
+                }
+              ]
+            },
+            {
+              "name": "PrepareUploadMetaRequest",
+              "comment": ["Prepare upload metadata via multipart form"],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "bucket",
+                  "annotations": [
+                    "api.form=\"bucket\"",
+                    "go.tag='validate:\"required,min=3,max=32\"'"
+                  ]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "object_key",
+                  "annotations": [
+                    "api.form=\"object_key\"",
+                    "go.tag='validate:\"required,min=1,max=128\"'"
+                  ]
+                },
+                {
+                  "id": 3,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "checksum",
+                  "annotations": [
+                    "api.form=\"checksum\"",
+                    "go.tag='validate:\"min=8,max=128\"'"
+                  ]
+                },
+                {
+                  "id": 4,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "content_type",
+                  "annotations": [
+                    "api.form=\"content_type\"",
+                    "go.tag='validate:\"required,oneof=image/png image/jpeg application/pdf\"'"
+                  ]
+                },
+                {
+                  "id": 5,
+                  "requiredness": "optional",
+                  "type": "i64",
+                  "name": "size_bytes",
+                  "annotations": [
+                    "api.form=\"size_bytes\"",
+                    "go.tag='validate:\"required,gte=1,lte=10485760\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "UploadMetaResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "upload_token",
+                  "annotations": ["go.tag='validate:\"required,base64\"'"]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "expires_at",
+                  "annotations": [
+                    "go.tag='validate:\"required,datetime=2006-01-02T15:04:05Z07:00\"'"
+                  ]
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "Multi2xxCandidate",
+              "requestType": "Multi2xxCandidateRequest",
+              "responseType": "OkResponse",
+              "httpMethod": "get",
+              "path": "/v1/lab/mutation/multi-2xx",
+              "comment": ["Mutation target: multiple success responses"]
+            },
+            {
+              "name": "NullableAnyOfCandidate",
+              "requestType": "NullableAnyOfCandidateRequest",
+              "responseType": "MutationNullableResponse",
+              "httpMethod": "post",
+              "path": "/v1/lab/mutation/nullable-anyof",
+              "comment": ["Mutation target: nullable anyOf"]
+            },
+            {
+              "name": "QueryArrayCandidate",
+              "requestType": "QueryArrayCandidateRequest",
+              "responseType": "OkResponse",
+              "httpMethod": "get",
+              "path": "/v1/lab/mutation/query-array",
+              "comment": [
+                "Mutation target: non-default query array serialization"
+              ]
+            },
+            {
+              "name": "QueryObjectCandidate",
+              "requestType": "QueryObjectCandidateRequest",
+              "responseType": "OkResponse",
+              "httpMethod": "get",
+              "path": "/v1/lab/mutation/query-object",
+              "comment": ["Mutation target: object query or deepObject"]
+            },
+            {
+              "name": "RefParameterCandidate",
+              "requestType": "RefParameterCandidateRequest",
+              "responseType": "OkResponse",
+              "httpMethod": "get",
+              "path": "/v1/lab/mutation/ref-parameter/:item_id",
+              "comment": ["Mutation target: parameter $ref"]
+            },
+            {
+              "name": "UpdatePreferences",
+              "requestType": "UpdatePreferencesRequest",
+              "responseType": "OkResponse",
+              "httpMethod": "post",
+              "path": "/v1/lab/preferences",
+              "comment": ["Update preferences via form-urlencoded"]
+            },
+            {
+              "name": "ValidateRawJson",
+              "requestType": "ValidateRawJsonRequest",
+              "responseType": "OkResponse",
+              "httpMethod": "post",
+              "path": "/v1/lab/raw-json",
+              "comment": ["Top-level scalar requestBody fallback"]
+            },
+            {
+              "name": "SearchProfiles",
+              "requestType": "SearchProfilesRequest",
+              "responseType": "SearchProfilesResponse",
+              "httpMethod": "get",
+              "path": "/v1/lab/search",
+              "comment": ["Search profiles with repeated-key query array"]
+            },
+            {
+              "name": "PrepareUploadMeta",
+              "requestType": "PrepareUploadMetaRequest",
+              "responseType": "UploadMetaResponse",
+              "httpMethod": "post",
+              "path": "/v1/lab/uploads/meta",
+              "comment": ["Prepare upload metadata via multipart form"]
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.boundarylab.supported\n\n// Mutation target: multiple success responses\nstruct Multi2xxCandidateRequest {\n}\n\nstruct OkResponse {\n  1: optional bool ok (go.tag='validate:\"required\"')\n  2: optional string request_id (go.tag='validate:\"required,uuid\"')\n}\n\n// Mutation target: nullable anyOf\nstruct NullableAnyOfCandidateRequest {\n  1: optional string nickname (api.body=\"nickname\", go.tag='validate:\"required,min=2,max=16\"')\n}\n\nstruct MutationNullableResponse {\n  1: optional string nickname (go.tag='validate:\"required,min=2,max=16\"')\n}\n\n// Mutation target: non-default query array serialization\nstruct QueryArrayCandidateRequest {\n  1: optional list<string> tags (api.query=\"tags\")\n}\n\n// Mutation target: object query or deepObject\nstruct QueryObjectCandidateRequest {\n  1: optional string filter_keyword (api.query=\"filter_keyword\", go.tag='validate:\"min=1,max=32\"')\n  2: optional i32 limit (api.query=\"limit\", go.tag='default:\"5\" validate:\"gte=1,lte=10\"')\n}\n\n// Mutation target: parameter $ref\nstruct RefParameterCandidateRequest {\n  1: required string item_id (api.path=\"item_id\", go.tag='validate:\"uuid\"')\n  2: optional string locale (api.query=\"locale\", go.tag='default:\"zh-CN\" validate:\"oneof=zh-CN en-US\"')\n}\n\n// Update preferences via form-urlencoded\nstruct UpdatePreferencesRequest {\n  1: optional string theme (api.form=\"theme\", go.tag='default:\"system\" validate:\"required,oneof=light dark system\"')\n  2: optional string timezone (api.form=\"timezone\", go.tag='validate:\"required,min=3,max=64\"')\n  3: optional bool daily_digest (api.form=\"daily_digest\", go.tag='default:\"false\"')\n  4: optional i32 weekly_limit (api.form=\"weekly_limit\", go.tag='default:\"20\" validate:\"gte=1,lte=50\"')\n}\n\n// Top-level scalar requestBody fallback\nstruct ValidateRawJsonRequest {\n  1: optional string body (api.raw_body=\"\", go.tag='validate:\"required,json\"')\n}\n\n// Search profiles with repeated-key query array\nstruct SearchProfilesRequest {\n  1: optional string debug_token (api.cookie=\"debug_token\", go.tag='validate:\"min=8,max=64\"')\n  2: optional string keyword (api.query=\"keyword\", go.tag='validate:\"required,min=1,max=32\"')\n  3: optional list<string> tags (api.query=\"tags\", go.tag='validate:\"min=1,max=5\"')\n  4: optional i32 page_size (api.query=\"page_size\", go.tag='default:\"20\" validate:\"gte=1,lte=50\"')\n  5: optional string x_request_id (api.header=\"X-Request-Id\", go.tag='validate:\"required,uuid\"')\n}\n\nstruct ProfileSummary {\n  1: optional string profile_id (go.tag='validate:\"required,uuid\"')\n  2: optional string display_name (go.tag='validate:\"required\"')\n  3: optional string role (go.tag='validate:\"required,oneof=user admin reviewer\"')\n}\n\nstruct SearchProfilesResponse {\n  1: optional i32 total (go.tag='validate:\"required,gte=0\"')\n  2: optional list<ProfileSummary> items (go.tag='validate:\"required\"')\n}\n\n// Prepare upload metadata via multipart form\nstruct PrepareUploadMetaRequest {\n  1: optional string bucket (api.form=\"bucket\", go.tag='validate:\"required,min=3,max=32\"')\n  2: optional string object_key (api.form=\"object_key\", go.tag='validate:\"required,min=1,max=128\"')\n  3: optional string checksum (api.form=\"checksum\", go.tag='validate:\"min=8,max=128\"')\n  4: optional string content_type (api.form=\"content_type\", go.tag='validate:\"required,oneof=image/png image/jpeg application/pdf\"')\n  5: optional i64 size_bytes (api.form=\"size_bytes\", go.tag='validate:\"required,gte=1,lte=10485760\"')\n}\n\nstruct UploadMetaResponse {\n  1: optional string upload_token (go.tag='validate:\"required,base64\"')\n  2: optional string expires_at (go.tag='validate:\"required,datetime=2006-01-02T15:04:05Z07:00\"')\n}\n\nservice BoundaryLabSupportedService {\n  // Mutation target: multiple success responses\n  OkResponse Multi2xxCandidate(1: Multi2xxCandidateRequest req) (api.get=\"/v1/lab/mutation/multi-2xx\")\n  // Mutation target: nullable anyOf\n  MutationNullableResponse NullableAnyOfCandidate(1: NullableAnyOfCandidateRequest req) (api.post=\"/v1/lab/mutation/nullable-anyof\")\n  // Mutation target: non-default query array serialization\n  OkResponse QueryArrayCandidate(1: QueryArrayCandidateRequest req) (api.get=\"/v1/lab/mutation/query-array\")\n  // Mutation target: object query or deepObject\n  OkResponse QueryObjectCandidate(1: QueryObjectCandidateRequest req) (api.get=\"/v1/lab/mutation/query-object\")\n  // Mutation target: parameter $ref\n  OkResponse RefParameterCandidate(1: RefParameterCandidateRequest req) (api.get=\"/v1/lab/mutation/ref-parameter/:item_id\")\n  // Update preferences via form-urlencoded\n  OkResponse UpdatePreferences(1: UpdatePreferencesRequest req) (api.post=\"/v1/lab/preferences\")\n  // Top-level scalar requestBody fallback\n  OkResponse ValidateRawJson(1: ValidateRawJsonRequest req) (api.post=\"/v1/lab/raw-json\")\n  // Search profiles with repeated-key query array\n  SearchProfilesResponse SearchProfiles(1: SearchProfilesRequest req) (api.get=\"/v1/lab/search\")\n  // Prepare upload metadata via multipart form\n  UploadMetaResponse PrepareUploadMeta(1: PrepareUploadMetaRequest req) (api.post=\"/v1/lab/uploads/meta\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Multiple Success API"
+          },
+          "paths": {
+            "/api/v1/multi-success": {
+              "post": {
+                "operationId": "MultiSuccess",
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "202": {
+                    "description": "accepted",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "queued": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "第一版暂不支持多个 2xx success response，请先在 OpenAPI profile 中收敛 (MultiSuccess)",
+        "pointer": "MultiSuccess"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Multiple Request Content API"
+          },
+          "paths": {
+            "/api/v1/multi-request-content": {
+              "post": {
+                "operationId": "MultiRequestContent",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "application/x-www-form-urlencoded": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持并行多 content-type 主线 (/api/v1/multi-request-content.post.requestBody)",
+        "pointer": "/api/v1/multi-request-content.post.requestBody"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Multiple Response Content API"
+          },
+          "paths": {
+            "/api/v1/multi-response-content": {
+              "get": {
+                "operationId": "MultiResponseContent",
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      },
+                      "text/plain": {
+                        "schema": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持并行多 content-type 主线 (MultiResponseContent.responses)",
+        "pointer": "MultiResponseContent.responses"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Discriminator API"
+          },
+          "paths": {
+            "/api/v1/contact": {
+              "post": {
+                "operationId": "CreateContact",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": ["email"]
+                              },
+                              "email": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": ["phone"]
+                              },
+                              "phone": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ],
+                        "discriminator": {
+                          "propertyName": "kind"
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 oneOf (/api/v1/contact.post.requestBody)",
+        "pointer": "/api/v1/contact.post.requestBody"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "CSV Success API"
+          },
+          "paths": {
+            "/api/v1/export": {
+              "get": {
+                "operationId": "ExportCsv",
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "text/csv": {
+                        "schema": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "CSVSuccessAPIService",
+          "definitions": [
+            {
+              "name": "ExportCsvRequest",
+              "fields": []
+            },
+            {
+              "name": "ExportCsvRawBodyResponse",
+              "comment": ["HTTP raw success body. content-type=text/csv."],
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "body",
+                  "annotations": ["api.raw_body=\"\""]
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "ExportCsv",
+              "requestType": "ExportCsvRequest",
+              "responseType": "ExportCsvRawBodyResponse",
+              "httpMethod": "get",
+              "path": "/api/v1/export"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct ExportCsvRequest {\n}\n\n// HTTP raw success body. content-type=text/csv.\nstruct ExportCsvRawBodyResponse {\n  1: optional string body (api.raw_body=\"\")\n}\n\nservice CSVSuccessAPIService {\n  ExportCsvRawBodyResponse ExportCsv(1: ExportCsvRequest req) (api.get=\"/api/v1/export\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Bad Binary Success API"
+          },
+          "paths": {
+            "/api/v1/export-bad": {
+              "get": {
+                "operationId": "ExportBad",
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/octet-stream": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "非 JSON success response 只支持 string/binary 标量或省略 schema (ExportBad.responses.2xx)",
+        "pointer": "ExportBad.responses.2xx"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Mixed Object API"
+          },
+          "paths": {
+            "/api/v1/mixed-map": {
+              "post": {
+                "operationId": "CreateMixedMap",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "metadata": {
+                            "type": "object",
+                            "properties": {
+                              "fixed": {
+                                "type": "string"
+                              }
+                            },
+                            "additionalProperties": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 properties 与 additionalProperties 混用的 object (/api/v1/mixed-map.post.requestBody.metadata)",
+        "pointer": "/api/v1/mixed-map.post.requestBody.metadata"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Pattern API"
+          },
+          "paths": {
+            "/api/v1/pattern": {
+              "post": {
+                "operationId": "PatternOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "phone": {
+                            "type": "string",
+                            "pattern": "^1\\d{10}$"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 pattern 自动投影，请改为手写 validator (/api/v1/pattern.post.requestBody.phone)",
+        "pointer": "/api/v1/pattern.post.requestBody.phone"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Multiple API"
+          },
+          "paths": {
+            "/api/v1/multiple": {
+              "post": {
+                "operationId": "MultipleOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "step": {
+                            "type": "number",
+                            "multipleOf": 0.5
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 multipleOf 自动投影，请改为手写 validator (/api/v1/multiple.post.requestBody.step)",
+        "pointer": "/api/v1/multiple.post.requestBody.step"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Closed Object API"
+          },
+          "paths": {
+            "/api/v1/closed": {
+              "post": {
+                "operationId": "ClosedOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 additionalProperties: false 自动投影；这需要自定义 binder 或改写 schema，不能通过字段 validator 接管 (/api/v1/closed.post.requestBody)",
+        "pointer": "/api/v1/closed.post.requestBody"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Closed Object Manual Override API"
+          },
+          "paths": {
+            "/api/v1/closed-override": {
+              "post": {
+                "operationId": "ClosedOverrideOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "payload": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "x-ispark-allow-unsupported-validation": true,
+                            "x-ispark-validate": "strict_object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 additionalProperties: false 自动投影；这需要自定义 binder 或改写 schema，不能通过字段 validator 接管 (/api/v1/closed-override.post.requestBody.payload)",
+        "pointer": "/api/v1/closed-override.post.requestBody.payload"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Manual Override API"
+          },
+          "paths": {
+            "/api/v1/manual": {
+              "post": {
+                "operationId": "ManualOverrideOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "phone": {
+                            "type": "string",
+                            "pattern": "^1\\d{10}$",
+                            "x-ispark-allow-unsupported-validation": true,
+                            "x-ispark-validate": "cn_mobile"
+                          },
+                          "score": {
+                            "type": "number",
+                            "multipleOf": 0.5,
+                            "x-ispark-allow-unsupported-validation": true,
+                            "x-ispark-validate": ["half_step", "gte=0"]
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "ManualOverrideAPIService",
+          "definitions": [
+            {
+              "name": "ManualOverrideOperationRequest",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "phone",
+                  "annotations": [
+                    "api.body=\"phone\"",
+                    "go.tag='validate:\"cn_mobile\"'"
+                  ]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "double",
+                  "name": "score",
+                  "annotations": [
+                    "api.body=\"score\"",
+                    "go.tag='validate:\"half_step,gte=0\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "ManualOverrideOperationResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "ManualOverrideOperation",
+              "requestType": "ManualOverrideOperationRequest",
+              "responseType": "ManualOverrideOperationResponse",
+              "httpMethod": "post",
+              "path": "/api/v1/manual"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct ManualOverrideOperationRequest {\n  1: optional string phone (api.body=\"phone\", go.tag='validate:\"cn_mobile\"')\n  2: optional double score (api.body=\"score\", go.tag='validate:\"half_step,gte=0\"')\n}\n\nstruct ManualOverrideOperationResponse {\n  1: optional bool ok\n}\n\nservice ManualOverrideAPIService {\n  ManualOverrideOperationResponse ManualOverrideOperation(1: ManualOverrideOperationRequest req) (api.post=\"/api/v1/manual\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Bad Manual Override API"
+          },
+          "paths": {
+            "/api/v1/manual-bad": {
+              "post": {
+                "operationId": "BadManualOverrideOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "phone": {
+                            "type": "string",
+                            "pattern": "^1\\d{10}$",
+                            "x-ispark-allow-unsupported-validation": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "x-ispark-allow-unsupported-validation 需要同时提供 x-ispark-validate (/api/v1/manual-bad.post.requestBody.phone)",
+        "pointer": "/api/v1/manual-bad.post.requestBody.phone"
+      }
+    },
+    {
+      "action": "validateOpenApiRenderDocument",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Manual Override Compatibility API"
+          },
+          "paths": {
+            "/api/v1/manual": {
+              "post": {
+                "operationId": "ManualOverrideCompatibilityOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "phone": {
+                            "type": "string",
+                            "pattern": "^1\\d{10}$",
+                            "x-dramawork-allow-unsupported-validation": true,
+                            "x-dramawork-validate": "cn_mobile"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "profile": "apifox-hz-thrift",
+        "issues": [
+          {
+            "severity": "warning",
+            "code": "openapi.components.schemas_missing",
+            "pointer": "#/components/schemas",
+            "message": "建议使用 components.schemas 承载可复用数据模型，便于 APIFox 和 Thrift 共用引用"
+          },
+          {
+            "severity": "warning",
+            "code": "operation.tags.missing",
+            "pointer": "#/paths/~1api~1v1~1manual/post/tags",
+            "message": "POST /api/v1/manual 建议声明 tags，APIFox 会用它辅助目录和过滤"
+          },
+          {
+            "severity": "warning",
+            "code": "hz.schema.legacy_manual_override",
+            "pointer": "#/paths/~1api~1v1~1manual/post/requestBody/content/application~1json/schema/properties/phone/x-dramawork-allow-unsupported-validation",
+            "message": "x-dramawork-allow-unsupported-validation 已弃用，请迁移到 x-ispark-allow-unsupported-validation"
+          },
+          {
+            "severity": "warning",
+            "code": "hz.schema.legacy_manual_validator",
+            "pointer": "#/paths/~1api~1v1~1manual/post/requestBody/content/application~1json/schema/properties/phone/x-dramawork-validate",
+            "message": "x-dramawork-validate 已弃用，请迁移到 x-ispark-validate"
+          },
+          {
+            "severity": "warning",
+            "code": "apifox.request_body.example_missing",
+            "pointer": "#/paths/~1api~1v1~1manual/post/requestBody",
+            "message": "APIFox requestBody 建议提供 media example/examples 或 schema 字段 example"
+          }
+        ],
+        "errorCount": 0,
+        "warningCount": 5,
+        "pathCount": 1,
+        "operationCount": 1,
+        "schemaCount": 0
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Manual Override Compatibility API"
+          },
+          "paths": {
+            "/api/v1/manual": {
+              "post": {
+                "operationId": "ManualOverrideCompatibilityOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "phone": {
+                            "type": "string",
+                            "pattern": "^1\\d{10}$",
+                            "x-dramawork-allow-unsupported-validation": true,
+                            "x-dramawork-validate": "cn_mobile"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "ManualOverrideCompatibilityAPIService",
+          "definitions": [
+            {
+              "name": "ManualOverrideCompatibilityOperationRequest",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "phone",
+                  "annotations": [
+                    "api.body=\"phone\"",
+                    "go.tag='validate:\"cn_mobile\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "ManualOverrideCompatibilityOperationResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "ManualOverrideCompatibilityOperation",
+              "requestType": "ManualOverrideCompatibilityOperationRequest",
+              "responseType": "ManualOverrideCompatibilityOperationResponse",
+              "httpMethod": "post",
+              "path": "/api/v1/manual"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct ManualOverrideCompatibilityOperationRequest {\n  1: optional string phone (api.body=\"phone\", go.tag='validate:\"cn_mobile\"')\n}\n\nstruct ManualOverrideCompatibilityOperationResponse {\n  1: optional bool ok\n}\n\nservice ManualOverrideCompatibilityAPIService {\n  ManualOverrideCompatibilityOperationResponse ManualOverrideCompatibilityOperation(1: ManualOverrideCompatibilityOperationRequest req) (api.post=\"/api/v1/manual\")\n}\n"
+      }
+    },
+    {
+      "action": "validateOpenApiRenderDocument",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Manual Override Compatibility API"
+          },
+          "paths": {
+            "/api/v1/manual": {
+              "post": {
+                "operationId": "ManualOverrideCompatibilityOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "string",
+                        "pattern": "^1\\d{10}$",
+                        "x-ispark-allow-unsupported-validation": true,
+                        "x-ispark-validate": "cn_mobile",
+                        "x-dramawork-allow-unsupported-validation": true,
+                        "x-dramawork-validate": "legacy_rule"
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "profile": "apifox-hz-thrift",
+        "issues": [
+          {
+            "severity": "warning",
+            "code": "openapi.components.schemas_missing",
+            "pointer": "#/components/schemas",
+            "message": "建议使用 components.schemas 承载可复用数据模型，便于 APIFox 和 Thrift 共用引用"
+          },
+          {
+            "severity": "warning",
+            "code": "operation.tags.missing",
+            "pointer": "#/paths/~1api~1v1~1manual/post/tags",
+            "message": "POST /api/v1/manual 建议声明 tags，APIFox 会用它辅助目录和过滤"
+          },
+          {
+            "severity": "warning",
+            "code": "hz.schema.legacy_manual_override",
+            "pointer": "#/paths/~1api~1v1~1manual/post/requestBody/content/application~1json/schema/x-dramawork-allow-unsupported-validation",
+            "message": "x-dramawork-allow-unsupported-validation 已弃用，请迁移到 x-ispark-allow-unsupported-validation"
+          },
+          {
+            "severity": "warning",
+            "code": "hz.schema.legacy_manual_validator",
+            "pointer": "#/paths/~1api~1v1~1manual/post/requestBody/content/application~1json/schema/x-dramawork-validate",
+            "message": "x-dramawork-validate 已弃用，请迁移到 x-ispark-validate"
+          },
+          {
+            "severity": "error",
+            "code": "hz.schema.manual_validator_conflict",
+            "pointer": "#/paths/~1api~1v1~1manual/post/requestBody/content/application~1json/schema/x-ispark-validate",
+            "message": "x-ispark-validate 与已弃用字段必须保持一致"
+          },
+          {
+            "severity": "warning",
+            "code": "apifox.request_body.example_missing",
+            "pointer": "#/paths/~1api~1v1~1manual/post/requestBody",
+            "message": "APIFox requestBody 建议提供 media example/examples 或 schema 字段 example"
+          },
+          {
+            "severity": "error",
+            "code": "hz.thrift_projection",
+            "pointer": "/api/v1/manual.post.requestBody",
+            "message": "OpenAPI 无法稳定投影为 Thrift IDL: x-ispark-validate 与已弃用的 x-dramawork-validate 必须保持一致 (/api/v1/manual.post.requestBody)"
+          }
+        ],
+        "errorCount": 2,
+        "warningCount": 5,
+        "pathCount": 1,
+        "operationCount": 1,
+        "schemaCount": 0
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Manual Override Compatibility API"
+          },
+          "paths": {
+            "/api/v1/manual": {
+              "post": {
+                "operationId": "ManualOverrideCompatibilityOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "string",
+                        "pattern": "^1\\d{10}$",
+                        "x-ispark-allow-unsupported-validation": true,
+                        "x-ispark-validate": "cn_mobile",
+                        "x-dramawork-allow-unsupported-validation": true,
+                        "x-dramawork-validate": "legacy_rule"
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "x-ispark-validate 与已弃用的 x-dramawork-validate 必须保持一致 (/api/v1/manual.post.requestBody)",
+        "pointer": "/api/v1/manual.post.requestBody"
+      }
+    },
+    {
+      "action": "validateOpenApiRenderDocument",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Manual Override Compatibility API"
+          },
+          "paths": {
+            "/api/v1/manual": {
+              "post": {
+                "operationId": "ManualOverrideCompatibilityOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "string",
+                        "pattern": "^1\\d{10}$",
+                        "x-ispark-allow-unsupported-validation": true,
+                        "x-ispark-validate": "cn_mobile",
+                        "x-dramawork-allow-unsupported-validation": false,
+                        "x-dramawork-validate": "cn_mobile"
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "profile": "apifox-hz-thrift",
+        "issues": [
+          {
+            "severity": "warning",
+            "code": "openapi.components.schemas_missing",
+            "pointer": "#/components/schemas",
+            "message": "建议使用 components.schemas 承载可复用数据模型，便于 APIFox 和 Thrift 共用引用"
+          },
+          {
+            "severity": "warning",
+            "code": "operation.tags.missing",
+            "pointer": "#/paths/~1api~1v1~1manual/post/tags",
+            "message": "POST /api/v1/manual 建议声明 tags，APIFox 会用它辅助目录和过滤"
+          },
+          {
+            "severity": "warning",
+            "code": "hz.schema.legacy_manual_override",
+            "pointer": "#/paths/~1api~1v1~1manual/post/requestBody/content/application~1json/schema/x-dramawork-allow-unsupported-validation",
+            "message": "x-dramawork-allow-unsupported-validation 已弃用，请迁移到 x-ispark-allow-unsupported-validation"
+          },
+          {
+            "severity": "warning",
+            "code": "hz.schema.legacy_manual_validator",
+            "pointer": "#/paths/~1api~1v1~1manual/post/requestBody/content/application~1json/schema/x-dramawork-validate",
+            "message": "x-dramawork-validate 已弃用，请迁移到 x-ispark-validate"
+          },
+          {
+            "severity": "error",
+            "code": "hz.schema.manual_override_conflict",
+            "pointer": "#/paths/~1api~1v1~1manual/post/requestBody/content/application~1json/schema/x-ispark-allow-unsupported-validation",
+            "message": "x-ispark-allow-unsupported-validation 与已弃用字段必须保持一致"
+          },
+          {
+            "severity": "warning",
+            "code": "apifox.request_body.example_missing",
+            "pointer": "#/paths/~1api~1v1~1manual/post/requestBody",
+            "message": "APIFox requestBody 建议提供 media example/examples 或 schema 字段 example"
+          },
+          {
+            "severity": "error",
+            "code": "hz.thrift_projection",
+            "pointer": "/api/v1/manual.post.requestBody",
+            "message": "OpenAPI 无法稳定投影为 Thrift IDL: x-ispark-allow-unsupported-validation 与已弃用的 x-dramawork-allow-unsupported-validation 必须保持一致 (/api/v1/manual.post.requestBody)"
+          }
+        ],
+        "errorCount": 2,
+        "warningCount": 5,
+        "pathCount": 1,
+        "operationCount": 1,
+        "schemaCount": 0
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Manual Override Compatibility API"
+          },
+          "paths": {
+            "/api/v1/manual": {
+              "post": {
+                "operationId": "ManualOverrideCompatibilityOperation",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "string",
+                        "pattern": "^1\\d{10}$",
+                        "x-ispark-allow-unsupported-validation": true,
+                        "x-ispark-validate": "cn_mobile",
+                        "x-dramawork-allow-unsupported-validation": false,
+                        "x-dramawork-validate": "cn_mobile"
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "x-ispark-allow-unsupported-validation 与已弃用的 x-dramawork-allow-unsupported-validation 必须保持一致 (/api/v1/manual.post.requestBody)",
+        "pointer": "/api/v1/manual.post.requestBody"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Form API"
+          },
+          "paths": {
+            "/api/v1/form": {
+              "post": {
+                "operationId": "SubmitForm",
+                "requestBody": {
+                  "content": {
+                    "application/x-www-form-urlencoded": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "keyword": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "page": {
+                            "type": "integer",
+                            "minimum": 1
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "FormAPIService",
+          "definitions": [
+            {
+              "name": "SubmitFormRequest",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "keyword",
+                  "annotations": [
+                    "api.form=\"keyword\"",
+                    "go.tag='validate:\"min=1\"'"
+                  ]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "i32",
+                  "name": "page",
+                  "annotations": [
+                    "api.form=\"page\"",
+                    "go.tag='validate:\"gte=1\"'"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "SubmitFormResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "SubmitForm",
+              "requestType": "SubmitFormRequest",
+              "responseType": "SubmitFormResponse",
+              "httpMethod": "post",
+              "path": "/api/v1/form"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct SubmitFormRequest {\n  1: optional string keyword (api.form=\"keyword\", go.tag='validate:\"min=1\"')\n  2: optional i32 page (api.form=\"page\", go.tag='validate:\"gte=1\"')\n}\n\nstruct SubmitFormResponse {\n  1: optional bool ok\n}\n\nservice FormAPIService {\n  SubmitFormResponse SubmitForm(1: SubmitFormRequest req) (api.post=\"/api/v1/form\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Multipart API"
+          },
+          "paths": {
+            "/api/v1/multipart": {
+              "post": {
+                "operationId": "SubmitMultipart",
+                "requestBody": {
+                  "content": {
+                    "multipart/form-data": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "maxLength": 50
+                          },
+                          "visible": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "result": {
+        "document": {
+          "namespace": "ispark.openapi",
+          "serviceName": "MultipartAPIService",
+          "definitions": [
+            {
+              "name": "SubmitMultipartRequest",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "string",
+                  "name": "title",
+                  "annotations": [
+                    "api.form=\"title\"",
+                    "go.tag='validate:\"max=50\"'"
+                  ]
+                },
+                {
+                  "id": 2,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "visible",
+                  "annotations": ["api.form=\"visible\""]
+                }
+              ]
+            },
+            {
+              "name": "SubmitMultipartResponse",
+              "fields": [
+                {
+                  "id": 1,
+                  "requiredness": "optional",
+                  "type": "bool",
+                  "name": "ok",
+                  "annotations": []
+                }
+              ]
+            }
+          ],
+          "methods": [
+            {
+              "name": "SubmitMultipart",
+              "requestType": "SubmitMultipartRequest",
+              "responseType": "SubmitMultipartResponse",
+              "httpMethod": "post",
+              "path": "/api/v1/multipart"
+            }
+          ]
+        },
+        "thrift": "// Generated by @sttot/openapi-thrift\n// Unsupported OpenAPI features fail fast by design.\n\nnamespace go ispark.openapi\n\nstruct SubmitMultipartRequest {\n  1: optional string title (api.form=\"title\", go.tag='validate:\"max=50\"')\n  2: optional bool visible (api.form=\"visible\")\n}\n\nstruct SubmitMultipartResponse {\n  1: optional bool ok\n}\n\nservice MultipartAPIService {\n  SubmitMultipartResponse SubmitMultipart(1: SubmitMultipartRequest req) (api.post=\"/api/v1/multipart\")\n}\n"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Multipart File API"
+          },
+          "paths": {
+            "/api/v1/upload": {
+              "post": {
+                "operationId": "UploadFile",
+                "requestBody": {
+                  "content": {
+                    "multipart/form-data": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "file": {
+                            "type": "string",
+                            "format": "binary"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 form/multipart 文件字段（单文件或多文件）自动投影，请改为手写上传接口 (/api/v1/upload.post.requestBody.file)",
+        "pointer": "/api/v1/upload.post.requestBody.file"
+      }
+    },
+    {
+      "action": "convertOpenApiToThrift",
+      "args": [
+        {
+          "openapi": "3.0.3",
+          "info": {
+            "title": "Multipart Multi File API"
+          },
+          "paths": {
+            "/api/v1/upload-multi": {
+              "post": {
+                "operationId": "UploadMultiFile",
+                "requestBody": {
+                  "content": {
+                    "multipart/form-data": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "files": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "format": "binary"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "ok",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "ok": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "error": {
+        "name": "OpenApiProjectionError",
+        "message": "当前不支持 form/multipart 文件字段（单文件或多文件）自动投影，请改为手写上传接口 (/api/v1/upload-multi.post.requestBody.files)",
+        "pointer": "/api/v1/upload-multi.post.requestBody.files"
+      }
+    }
+  ]
+}

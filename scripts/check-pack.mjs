@@ -10,25 +10,21 @@ const allowedFiles = new Set([
   "LICENSE",
   "README.md",
   "package.json",
-  "dist/cli.d.ts",
-  "dist/cli.js",
   "dist/index.d.ts",
   "dist/index.js",
   "dist/model.d.ts",
   "dist/model.js",
-  "dist/profile.d.ts",
-  "dist/profile.js",
-  "dist/projector.d.ts",
-  "dist/projector.js",
-  "dist/thrift-route-index.d.ts",
-  "dist/thrift-route-index.js",
+  "dist/validation-types.d.ts",
+  "dist/validation-types.js",
+  "dist/wasm_exec.d.ts",
+  "dist/wasm_exec.js",
+  "dist/openapi-thrift.wasm",
 ])
 
-const maxCompressedSizeBytes = 30_000
-const maxUnpackedSizeBytes = 120_000
+const maxCompressedSizeBytes = 2_500_000
+const maxUnpackedSizeBytes = 10_000_000
 const packageRoot = fileURLToPath(new URL("..", import.meta.url))
 const packageManifestPath = fileURLToPath(new URL("../package.json", import.meta.url))
-const cliPath = fileURLToPath(new URL("../dist/cli.js", import.meta.url))
 
 async function main() {
   const packageManifest = JSON.parse(await readFile(packageManifestPath, "utf8"))
@@ -47,14 +43,8 @@ async function main() {
     "https://github.com/Gk0Wk/openapi-thrift/issues",
     "package.json bugs URL 与 canonical 仓库不一致",
   )
-  assert.equal(packageManifest.bin?.["openapi-thrift"], "dist/cli.js")
-  assert.equal(packageManifest.bin?.["openapi-render"], "dist/cli.js")
-
-  const { stdout: helpOutput } = await execFile(process.execPath, [cliPath, "--help"], {
-    cwd: packageRoot,
-  })
-  assert.match(helpOutput, /^@sttot\/openapi-thrift$/m)
-  assert.doesNotMatch(helpOutput, /^@sttot\/openapi-render$/m)
+  assert.equal(packageManifest.bin, undefined, "CLI 由 Go 提供，浏览器包不再安装 Node CLI")
+  assert.deepEqual(packageManifest.sideEffects, ["./dist/wasm_exec.js"])
 
   const { stdout } =
     process.platform === "win32"
