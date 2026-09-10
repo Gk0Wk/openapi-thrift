@@ -4,9 +4,8 @@
 
 ## Active Work
 
-- [ ] 已批准 1+2：固定 Go 核心/CLI/WASM 候选身份，完成本地 Go/包/安全验证、独立交付分支提交与远端 CI，backend 消费该 clean commit。未授权 npm 发布或真实消费者迁移。
+已批准 1+2 的 converter 交付已完成：`0.3.0-rc.1` 候选、固定核心字节、Go/WASM 本地验证与实现提交的远端 CI 通过；backend 固定消费 clean commit `88ee9ce`。产物和 Actions 证据见 [候选归档](docs/releases/unreleased/2026-09-10-workspace-go-candidate.md)。未发布 npm/Go 版本或迁移真实消费者。
 
 Go 单核心迁移 G1–G5 已完成并归档至 [核心验收](docs/releases/unreleased/2026-09-10-runtime-go-core.md) 与 [backend 无 Node 整链验收](docs/releases/unreleased/2026-09-10-workspace-backend-go-integration.md)。当前源码未发布，真实消费者未迁移。
 
-- [ ] Run GitHub Actions CI at least once and observe whether `pnpm audit` has environment-specific noise.
 - [ ] Configure `NPM_TOKEN` before enabling GitHub Actions automatic npm publish.
