@@ -9,6 +9,7 @@ tests:
   - go test -race ./cmd/release
   - go vet ./cmd/release
   - actionlint .github/workflows/openapi-thrift-release.yml .github/workflows/openapi-thrift-release-verify.yml
+  - gh run view 34509224290 --repo Gk0Wk/openapi-thrift --json headSha,status,conclusion,jobs
 artifacts:
   - cmd/release/registry.go
   - cmd/release/registry_test.go
@@ -36,4 +37,8 @@ artifacts:
 
 ## Demo posture / limitations
 
-这是发行验证修复，不改变已发布的 0.3.0 包体、tag、转换核心或 API。真实发布物回读、修复提交的远端 CI 与独立恢复 workflow 仍在本轮执行。原发行 run 的失败事实必须保留；成功恢复不能被写成原 run 全绿或另一个版本已经发布。
+修复提交 `7821b34ac903e283f86e559ba1719f8aa32897af` 的 [完整候选 CI 34508783888](https://github.com/Gk0Wk/openapi-thrift/actions/runs/34508783888) 已通过，经 [PR #3](https://github.com/Gk0Wk/openapi-thrift/pull/3) 合入 main 为 `61a391bc4a4e1ecdb5493fbc872fb340901a6459`；其 [完整 main CI 34509214691](https://github.com/Gk0Wk/openapi-thrift/actions/runs/34509214691) 和独立 CI `34509214203` 也已通过。
+
+从该 main 提交执行 [只读恢复 34509224290](https://github.com/Gk0Wk/openapi-thrift/actions/runs/34509224290)，指定 `release_tag=v0.3.0`、`source_run=34507267145`，结果 success。原 tag/run 身份匹配、GitHub 全部包体和摘要、registry 精确 npm 字节、Linux 上实际 npm 安装及远端 Go API/CLI 均通过。本机另完成 Windows 的 registry 安装、远端 Go consumer/CLI、下载 CLI 在空 PATH 下运行，以及 npm registry signature 和 provenance 验证；精确摘要见 [稳定发行记录](2026-09-11-ci-stable-publication.md)。
+
+稳定发行和回读修复计划已完成并移出 TODO。这次没有重建或替换已公开包体，没有移动 tag 或再发 npm；新 workflow 供未来发行自动调用，也可在原 artifact 保留期内单独验证。原发行 run 的回读失败事实保留；成功恢复不代表原 run 全绿，也没有为验证流程另发新版本。历史 RC 的 registry 内部原因仍未知。
