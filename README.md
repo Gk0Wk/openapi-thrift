@@ -12,7 +12,7 @@
 
 </div>
 
-本仓对受限 OpenAPI profile 做显式、可审计的校验和渲染。Go 是唯一规则核心；原生 `openapi-thrift` CLI 与浏览器 WASM 共用它。`0.3.0-rc.1` 是 Go/WASM 迁移的预发布版本，包含初始化接口和 CLI 的不兼容变更；升级说明见 [版本说明](docs/releases/v0.3.0-rc.1.md)。
+本仓对受限 OpenAPI profile 做显式、可审计的校验和渲染。Go 是唯一规则核心；原生 `openapi-thrift` CLI 与浏览器 WASM 共用它。`0.3.0` 是 Go/WASM 迁移的稳定版本，包含相对 `0.2.x` 的初始化接口和 CLI 不兼容变更；升级说明见 [版本说明](docs/releases/v0.3.0.md)。
 
 ## 为什么用它
 
@@ -41,13 +41,13 @@ OpenAPI / Apifox export
 发行采用同一版本的 npm/WASM、Go Module 和六平台 CLI；流程与 OIDC 配置见 [分发说明](docs/distribution.md)。按使用场景选择入口并固定完整版本：
 
 ```bash
-npm install @sttot/openapi-thrift@0.3.0-rc.1
-go get github.com/Gk0Wk/openapi-thrift@v0.3.0-rc.1
-go install github.com/Gk0Wk/openapi-thrift/cmd/openapi-thrift@v0.3.0-rc.1
+npm install @sttot/openapi-thrift@0.3.0
+go get github.com/Gk0Wk/openapi-thrift@v0.3.0
+go install github.com/Gk0Wk/openapi-thrift/cmd/openapi-thrift@v0.3.0
 openapi-thrift --version
 ```
 
-也可从 [GitHub Release](https://github.com/Gk0Wk/openapi-thrift/releases/tag/v0.3.0-rc.1) 下载 Windows/macOS/Linux amd64/arm64 的预编译 CLI，核对 `SHA256SUMS` 后解包；运行它不需要 Go 或 Node。预发布 npm 使用 `next` 分发标签，实际项目仍固定完整版本。远端可用性以对应版本的 registry、Git tag 和 Release 资产为准。
+也可从 [GitHub Release](https://github.com/Gk0Wk/openapi-thrift/releases/tag/v0.3.0) 下载 Windows/macOS/Linux amd64/arm64 的预编译 CLI，核对 `SHA256SUMS` 后解包；运行它不需要 Go 或 Node。稳定 npm 使用 `latest` 分发标签，实际项目仍固定完整版本。远端可用性以对应版本的 registry、Git tag 和 Release 资产为准。
 
 ```bash
 go build -trimpath -o .tmp/openapi-thrift ./cmd/openapi-thrift

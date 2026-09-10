@@ -111,6 +111,8 @@ jobs:
           corepack prepare pnpm@10.14.0 --activate
           npm install --global npm@11.9.0
           pnpm install --frozen-lockfile
+      - name: Verify npm publication response handling against a local registry
+        run: npm run test:release
       - name: Build and pack the exact npm publication payload
         run: |
           pnpm build
@@ -181,13 +183,17 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
           NPM_DIST_TAG: ${{ needs.metadata.outputs.npm_tag }}
-        run: npm publish ".tmp/release/sttot-openapi-thrift-${RELEASE_VERSION}.tgz" --ignore-scripts --access public --provenance --tag "$NPM_DIST_TAG" --registry https://registry.npmjs.org
+          # A failed response can arrive after registry acceptance. Preserve it;
+          # never repeat this mutation with the same short-lived publish token.
+          NPM_CONFIG_FETCH_RETRIES: '0'
+        run: npm publish ".tmp/release/sttot-openapi-thrift-${RELEASE_VERSION}.tgz" --ignore-scripts --access public --provenance --tag "$NPM_DIST_TAG" --registry https://registry.npmjs.org --loglevel=http
       - name: Publish the same commit and native archives on GitHub
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.metadata.outputs.tag }}
           PRERELEASE: ${{ needs.metadata.outputs.prerelease }}
-        run: gh release create "$RELEASE_TAG" .tmp/release/*.tar.gz .tmp/release/*.zip .tmp/release/*.tgz .tmp/release/SHA256SUMS --verify-tag --prerelease="$PRERELEASE" --latest=false --title "OpenAPI Thrift $RELEASE_TAG" --notes-file "docs/releases/${RELEASE_TAG}.md"
+          LATEST: ${{ needs.metadata.outputs.prerelease == 'false' }}
+        run: gh release create "$RELEASE_TAG" .tmp/release/*.tar.gz .tmp/release/*.zip .tmp/release/*.tgz .tmp/release/SHA256SUMS --verify-tag --prerelease="$PRERELEASE" --latest="$LATEST" --title "OpenAPI Thrift $RELEASE_TAG" --notes-file "docs/releases/${RELEASE_TAG}.md"
       - name: Verify published npm bytes and installed Go module
         env:
           RELEASE_VERSION: ${{ needs.metadata.outputs.version }}

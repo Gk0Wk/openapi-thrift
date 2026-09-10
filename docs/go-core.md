@@ -26,4 +26,4 @@ JSON/YAML 解析保留字段顺序，数字对象键仍按 ECMAScript 规则排�
 
 2026-09-10 Edge 的本机页面实测：默认 YAML 成功生成 EmptyResponse/Health 方法；oneOf 显示两个明确 issue 并隐藏旧输出；非法 YAML 显示解析错误。浏览器资源清单只有 example.js、index.js、wasm_exec.js、WASM，均为 loopback；控制台 error/warn 为空。该结果不代表大型文档性能、所有浏览器或所有打包器均已验收。
 
-`0.3.0-rc.1` 的版本安装与分发使用统一发行流程，发行本身不迁移真实消费者。核心字节由 `.gitattributes` 在各平台保留；backend 的来源锁固定 clean commit、8 个文件哈希和完整树哈希。候选与 CI 边界见 [交付说明](releases/unreleased/2026-09-10-workspace-go-candidate.md)。backend 完整无 Node/Python PATH 的 scaffold/codegen/drift/补丁、真实 JSON/YAML 和双框架验收已通过，见 [跨仓验收](releases/unreleased/2026-09-10-workspace-backend-go-integration.md)。该结果不代表后端性能/存储实验或生产准入。
+`0.3.0` 的版本安装与分发使用统一发行流程，发行本身不迁移真实消费者。核心字节由 `.gitattributes` 在各平台保留；backend 的来源锁固定 clean commit、8 个文件哈希和完整树哈希。候选与 CI 边界见 [交付说明](releases/unreleased/2026-09-10-workspace-go-candidate.md)。backend 完整无 Node/Python PATH 的 scaffold/codegen/drift/补丁、真实 JSON/YAML 和双框架验收已通过，见 [跨仓验收](releases/unreleased/2026-09-10-workspace-backend-go-integration.md)。该结果不代表后端性能/存储实验或生产准入。
