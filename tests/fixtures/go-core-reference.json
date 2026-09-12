@@ -2495,7 +2495,10 @@
                   "requiredness": "optional",
                   "type": "list<string>",
                   "name": "tags",
-                  "annotations": ["api.query=\"tags\"", "go.tag='validate:\"dive,min=1,max=16\"'"]
+                  "annotations": [
+                    "api.query=\"tags\"",
+                    "go.tag='validate:\"dive,min=1,max=16\"'"
+                  ]
                 }
               ]
             },

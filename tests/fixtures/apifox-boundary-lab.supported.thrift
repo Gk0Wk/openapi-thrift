@@ -23,7 +23,7 @@ struct MutationNullableResponse {
 
 // Mutation target: non-default query array serialization
 struct QueryArrayCandidateRequest {
-  1: optional list<string> tags (api.query="tags")
+  1: optional list<string> tags (api.query="tags", go.tag='validate:"dive,min=1,max=16"')
 }
 
 // Mutation target: object query or deepObject
@@ -55,7 +55,7 @@ struct ValidateRawJsonRequest {
 struct SearchProfilesRequest {
   1: optional string debug_token (api.cookie="debug_token", go.tag='validate:"min=8,max=64"')
   2: optional string keyword (api.query="keyword", go.tag='validate:"required,min=1,max=32"')
-  3: optional list<string> tags (api.query="tags", go.tag='validate:"min=1,max=5"')
+  3: optional list<string> tags (api.query="tags", go.tag='validate:"min=1,max=5,dive,min=1,max=16"')
   4: optional i32 page_size (api.query="page_size", go.tag='default:"20" validate:"gte=1,lte=50"')
   5: optional string x_request_id (api.header="X-Request-Id", go.tag='validate:"required,uuid"')
 }
@@ -68,7 +68,7 @@ struct ProfileSummary {
 
 struct SearchProfilesResponse {
   1: optional i32 total (go.tag='validate:"required,gte=0"')
-  2: optional list<ProfileSummary> items (go.tag='validate:"required"')
+  2: optional list<ProfileSummary> items (go.tag='validate:"required,dive"')
 }
 
 // Prepare upload metadata via multipart form

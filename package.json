@@ -1,6 +1,6 @@
 {
   "name": "@sttot/openapi-thrift",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "OpenAPI validation and rendering toolkit for APIFox, CloudWeGo Hz/Thrift, and frontend API generation workflows.",
   "packageManager": "pnpm@10.14.0",
   "type": "module",
