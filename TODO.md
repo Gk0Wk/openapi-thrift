@@ -2,4 +2,4 @@
 
 > Active-only tracker. Completed notes belong in `docs/releases/unreleased/` or stable docs.
 
-当前没有进行中的发行任务。主干、稳定版与发布回执改造已归档到 [稳定发行](docs/releases/unreleased/2026-09-11-ci-stable-publication.md)；只读回读修复与恢复验收见 [记录](docs/releases/unreleased/2026-09-11-ci-release-readback.md)。
+当前进行中的发行任务：为数组 schema 生成递归的 `dive` 与元素约束，确保 primitive/object/nested array 的运行时校验与 OpenAPI 输入一致。完成条件是 Go corpus、正向数组用例、race 和 vet 全部通过；下游 backend snapshot 需在独立同步步骤更新。

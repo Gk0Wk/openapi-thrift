@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -79,5 +80,51 @@ func TestGoProjectionRejectsCyclicAliasesButAllowsRecursiveStructs(t *testing.T)
 		if _, err := Convert(input, ProjectionOptions{}); err == nil {
 			t.Error("cyclic non-struct alias accepted")
 		}
+	}
+}
+
+func TestGoProjectionAddsRecursiveArrayItemValidators(t *testing.T) {
+	input := []byte(`{
+  "openapi":"3.0.3",
+  "info":{"title":"ArrayValidation"},
+  "paths":{"/items":{"post":{"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/Request"}}}},"responses":{"200":{"description":"ok"}}}}},
+  "components":{"schemas":{
+    "Request":{"type":"object","required":["tags","items"],"properties":{
+      "tags":{"type":"array","minItems":1,"maxItems":5,"items":{"type":"string","minLength":2,"maxLength":8}},
+      "items":{"type":"array","items":{"$ref":"#/components/schemas/Item"}}
+    }},
+    "Item":{"type":"object","required":["name"],"properties":{"name":{"type":"string","minLength":3}}}
+  }}
+}`)
+	result, err := Convert(input, ProjectionOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(result.Thrift, `tags (api.body="tags", go.tag='validate:"required,min=1,max=5,dive,min=2,max=8"')`) {
+		t.Fatalf("primitive array item validators missing:\n%s", result.Thrift)
+	}
+	if !strings.Contains(result.Thrift, `items (api.body="items", go.tag='validate:"required,dive"')`) {
+		t.Fatalf("object array dive validator missing:\n%s", result.Thrift)
+	}
+	if !strings.Contains(result.Thrift, `name (go.tag='validate:"required,min=3"')`) {
+		t.Fatalf("nested object validator missing:\n%s", result.Thrift)
+	}
+}
+
+func TestGoProjectionRecursesThroughNestedArrays(t *testing.T) {
+	input := []byte(`{
+  "openapi":"3.0.3",
+  "info":{"title":"NestedArrayValidation"},
+  "paths":{"/items":{"post":{"requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/Request"}}}},"responses":{"200":{"description":"ok"}}}}},
+  "components":{"schemas":{
+    "Request":{"type":"object","properties":{"matrix":{"type":"array","items":{"type":"array","items":{"type":"string","minLength":2}}}}}
+  }}
+}`)
+	result, err := Convert(input, ProjectionOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(result.Thrift, `matrix (api.body="matrix", go.tag='validate:"dive,dive,min=2"')`) {
+		t.Fatalf("nested array validators missing:\n%s", result.Thrift)
 	}
 }

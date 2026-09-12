@@ -209,7 +209,7 @@ func (p *projector) request(item, op *Value, method, path, methodName string) (s
 		if location == "path" {
 			requiredness = "required"
 		}
-		tags, err := goTags(schema, param.Get("required").Truth(), location != "path", requiredness, pointer)
+		tags, err := p.goTags(schema, param.Get("required").Truth(), location != "path", requiredness, pointer)
 		if err != nil {
 			return "", err
 		}
@@ -313,7 +313,7 @@ func (p *projector) requestBody(body *Value, name, pointer string, start int, us
 		if err != nil {
 			return nil, err
 		}
-		tags, err := goTags(media.Get("schema"), body.Get("required").Truth(), true, "optional", pointer)
+		tags, err := p.goTags(media.Get("schema"), body.Get("required").Truth(), true, "optional", pointer)
 		if err != nil {
 			return nil, err
 		}
@@ -343,7 +343,7 @@ func (p *projector) requestBody(body *Value, name, pointer string, start int, us
 		if err != nil {
 			return nil, err
 		}
-		tags, err := goTags(field.Value, required[field.Name], true, "optional", fieldPointer)
+		tags, err := p.goTags(field.Value, required[field.Name], true, "optional", fieldPointer)
 		if err != nil {
 			return nil, err
 		}
@@ -462,7 +462,7 @@ func (p *projector) schemaType(input *Value, suggested, pointer string, depth in
 			if err != nil {
 				return "", err
 			}
-			tags, err := goTags(field.Value, required[field.Name], true, "optional", fieldPointer)
+			tags, err := p.goTags(field.Value, required[field.Name], true, "optional", fieldPointer)
 			if err != nil {
 				return "", err
 			}
@@ -795,52 +795,32 @@ func assertSupported(v *Value, pointer string) error {
 	return nil
 }
 
-func goTags(input *Value, required, allowDefault bool, requiredness, pointer string) ([]string, error) {
+func (p *projector) goTags(input *Value, required, allowDefault bool, requiredness, pointer string) ([]string, error) {
 	var schema *Value
 	var err error
-	if !isRef(input) {
+	if isRef(input) {
+		schema, _, err = p.resolve(input, pointer, 0)
+	} else {
 		schema, err = inlineSchema(input, pointer)
-		if err != nil {
-			return nil, err
-		}
+	}
+	if err != nil {
+		return nil, err
 	}
 	validators := []string{}
 	if required && requiredness != "required" {
 		validators = append(validators, "required")
 	}
-	if enum := schema.Get("enum").List(); len(enum) > 0 {
-		values := []string{}
-		for _, value := range enum {
-			if value.Is(String) && whiteSpace.MatchString(value.Str()) {
-				return nil, projectionError("第一版不支持包含空白字符的 string enum，请先手工收紧枚举值", pointer)
-			}
-			values = append(values, valueText(value))
-		}
-		validators = append(validators, "oneof="+strings.Join(values, " "))
+	schemaValidators, err := p.schemaValidatorTags(schema, pointer)
+	if err != nil {
+		return nil, err
 	}
-	if schema != nil {
-		var bounds [][2]string
-		switch schema.Get("type").Str() {
-		case "integer", "number":
-			bounds = [][2]string{{"minimum", "gte"}, {"maximum", "lte"}}
-		case "string":
-			bounds = [][2]string{{"minLength", "min"}, {"maxLength", "max"}}
-		case "array":
-			bounds = [][2]string{{"minItems", "min"}, {"maxItems", "max"}}
-		}
-		for _, bound := range bounds {
-			if value := schema.Get(bound[0]); value.Is(Number) {
-				validators = append(validators, bound[1]+"="+valueText(value))
-			}
-		}
-		if validator := formatValidators[schema.Get("format").Str()]; validator != "" {
-			validators = append(validators, validator)
-		}
-		manual, err := manualValidators(schema, pointer)
+	validators = append(validators, schemaValidators...)
+	if schema.Get("type").Str() == "array" {
+		itemValidators, err := p.arrayItemValidators(schema.Get("items"), pointer+"/items", 0)
 		if err != nil {
 			return nil, err
 		}
-		validators = append(validators, manual...)
+		validators = append(validators, itemValidators...)
 	}
 	tags := []string{}
 	if len(validators) > 0 {
@@ -862,6 +842,105 @@ func goTags(input *Value, required, allowDefault bool, requiredness, pointer str
 		return []string{}, nil
 	}
 	return []string{"go.tag='" + strings.Join(tags, " ") + "'"}, nil
+}
+
+// schemaValidatorTags returns raw validator tokens for one schema. Keeping
+// this separate from goTags lets array items reuse the same constraints without
+// embedding a complete go.tag annotation inside the parent validate tag.
+func (p *projector) schemaValidatorTags(schema *Value, pointer string) ([]string, error) {
+	validators := []string{}
+	if enum := schema.Get("enum").List(); len(enum) > 0 {
+		values := []string{}
+		for _, value := range enum {
+			if value.Is(String) && whiteSpace.MatchString(value.Str()) {
+				return nil, projectionError("第一版不支持包含空白字符的 string enum，请先手工收紧枚举值", pointer)
+			}
+			values = append(values, valueText(value))
+		}
+		validators = append(validators, "oneof="+strings.Join(values, " "))
+	}
+	var bounds [][2]string
+	switch schema.Get("type").Str() {
+	case "integer", "number":
+		bounds = [][2]string{{"minimum", "gte"}, {"maximum", "lte"}}
+	case "string":
+		bounds = [][2]string{{"minLength", "min"}, {"maxLength", "max"}}
+	case "array":
+		bounds = [][2]string{{"minItems", "min"}, {"maxItems", "max"}}
+	}
+	for _, bound := range bounds {
+		if value := schema.Get(bound[0]); value.Is(Number) {
+			validators = append(validators, bound[1]+"="+valueText(value))
+		}
+	}
+	if validator := formatValidators[schema.Get("format").Str()]; validator != "" {
+		validators = append(validators, validator)
+	}
+	manual, err := manualValidators(schema, pointer)
+	if err != nil {
+		return nil, err
+	}
+	return append(validators, manual...), nil
+}
+
+// arrayItemValidators adds dive and the constraints of an array element. It
+// deliberately leaves unconstrained elements alone, preserving old output.
+func (p *projector) arrayItemValidators(input *Value, pointer string, depth int) ([]string, error) {
+	if input == nil || depth > 128 {
+		return nil, nil
+	}
+	schema, _, err := p.resolve(input, pointer, 0)
+	if err != nil {
+		return nil, err
+	}
+	if schema.Get("type").Str() == "array" {
+		nested, err := p.arrayItemValidators(schema.Get("items"), pointer+"/items", depth+1)
+		if err != nil || len(nested) == 0 {
+			return nested, err
+		}
+		return append([]string{"dive"}, nested...), nil
+	}
+	if objectSchema(schema) {
+		if !p.objectHasValidation(schema, pointer, depth+1) {
+			return nil, nil
+		}
+		return []string{"dive"}, nil
+	}
+	validators, err := p.schemaValidatorTags(schema, pointer)
+	if err != nil || len(validators) == 0 {
+		return validators, err
+	}
+	return append([]string{"dive"}, validators...), nil
+}
+
+func (p *projector) objectHasValidation(schema *Value, pointer string, depth int) bool {
+	if depth > 128 || len(schema.Get("required").List()) > 0 {
+		return len(schema.Get("required").List()) > 0
+	}
+	for _, field := range schema.Get("properties").Entries() {
+		fieldSchema, _, err := p.resolve(field.Value, pointer+"/properties/"+field.Name, 0)
+		if err != nil {
+			return true
+		}
+		if fieldSchema.Get("type").Str() == "object" {
+			if p.objectHasValidation(fieldSchema, pointer+"/properties/"+field.Name, depth+1) {
+				return true
+			}
+			continue
+		}
+		if fieldSchema.Get("type").Str() == "array" {
+			itemValidators, itemErr := p.arrayItemValidators(fieldSchema.Get("items"), pointer+"/properties/"+field.Name+"/items", depth+1)
+			if itemErr != nil || len(itemValidators) > 0 {
+				return true
+			}
+			continue
+		}
+		validators, validatorErr := p.goTags(fieldSchema, false, false, "optional", pointer+"/properties/"+field.Name)
+		if validatorErr != nil || len(validators) > 0 {
+			return true
+		}
+	}
+	return false
 }
 func valueText(v *Value) string {
 	if v == nil {
