@@ -61,7 +61,7 @@ go run ./cmd/openapi-thrift validate --input ./project.openapi.yaml
 go run ./cmd/openapi-thrift thrift --input ./project.openapi.yaml --output ./idl/project.thrift
 ```
 
-使用本仓 `go.mod` 固定的 Go 1.26.6。原生构建只依赖 Go，YAML 解析库固定为 `go.yaml.in/yaml/v3 v3.0.5`；不调用 JS、Python、`hz` 或 `kitex`。浏览器包维护者另需 Node/pnpm 构建 TS 薄绑定；浏览器运行时不需要 Node。源码开发与版本安装均使用明确版本，不使用 `@latest`。
+使用本仓 `go.mod` 固定的 Go 1.26.9。原生构建只依赖 Go，YAML 解析库固定为 `go.yaml.in/yaml/v3 v3.0.5`；不调用 JS、Python、`hz` 或 `kitex`。浏览器包维护者另需 Node/pnpm 构建 TS 薄绑定；浏览器运行时不需要 Node。源码开发与版本安装均使用明确版本，不使用 `@latest`。
 
 ```bash
 pnpm install --frozen-lockfile

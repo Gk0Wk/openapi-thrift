@@ -14,7 +14,7 @@ JSON/YAML 解析保留字段顺序，数字对象键仍按 ECMAScript 规则排�
 
 先 `await initializeOpenApiThrift()`，之后转换/校验继续同步返回。初始化支持 `wasmURL` 或调用方传入的字节/预编译 `WebAssembly.Module`；同一模块重复调用共用初始化 promise，加载失败可重试。输入不离开当前运行环境，不解析远程 `$ref`，也不执行 mockScript。
 
-构建固定 Go 1.26.6，WASM 与 `wasm_exec.js` 必须成对分发。后者按 package.json sideEffects 保留，禁止被 tree-shaking 丢弃。资源以 `application/wasm` 提供；CSP 允许 `script-src 'self' 'wasm-unsafe-eval'` 和对应 `connect-src`。示例服务仅监听 loopback，且只允许示例/构建资源路径。没有独立 converter HTTP API。
+构建固定 Go 1.26.9，WASM 与 `wasm_exec.js` 必须成对分发。后者按 package.json sideEffects 保留，禁止被 tree-shaking 丢弃。资源以 `application/wasm` 提供；CSP 允许 `script-src 'self' 'wasm-unsafe-eval'` 和对应 `connect-src`。示例服务仅监听 loopback，且只允许示例/构建资源路径。没有独立 converter HTTP API。
 
 包体从旧 TypeScript 的约 26 KB gzip 增加为约 1.45 MB gzip / 5.30 MB 解包；包门禁上限为 2.5 MB 压缩 / 10 MB 解包。它换取单核心维护，不能宣称浏览器更轻。按需加载并缓存静态资源；大文档使用 Web Worker。原生 CLI 无此下载和 JS 初始化需求。真实前端 owner 必须独立执行初始化和资源部署迁移。
 
