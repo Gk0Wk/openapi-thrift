@@ -1,0 +1,104 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Required Map Response", "version": "1.0.0" },
+  "paths": {
+    "/download": {
+      "get": {
+        "operationId": "getDownload",
+        "responses": {
+          "200": {
+            "description": "Capability",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Envelope" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shared": {
+      "post": {
+        "operationId": "saveShared",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["shared", "request_only"],
+                "properties": {
+                  "shared": { "$ref": "#/components/schemas/Capability" },
+                  "request_only": { "$ref": "#/components/schemas/RequestOnly" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Shared",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Capability" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "StringMap": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
+      },
+      "MapAlias": { "$ref": "#/components/schemas/StringMap" },
+      "Capability": {
+        "type": "object",
+        "required": ["headers", "aliases"],
+        "properties": {
+          "headers": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "maxProperties": 0,
+            "x-dramawork-allow-unsupported-validation": true,
+            "x-dramawork-validate": "len=0"
+          },
+          "aliases": { "$ref": "#/components/schemas/MapAlias" },
+          "optional_headers": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      },
+      "Envelope": {
+        "type": "object",
+        "required": ["direct", "rows", "nested"],
+        "properties": {
+          "direct": { "$ref": "#/components/schemas/Capability" },
+          "rows": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Capability" }
+          },
+          "nested": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Capability"
+            }
+          }
+        }
+      },
+      "RequestOnly": {
+        "type": "object",
+        "required": ["headers"],
+        "properties": {
+          "headers": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

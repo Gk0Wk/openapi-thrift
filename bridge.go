@@ -106,6 +106,13 @@ func dispatchJSON(body []byte) (json.RawMessage, error) {
 	if request.Action == "parseOpenApiDocument" {
 		return json.Marshal(document)
 	}
+	if request.Action == "compileRawJsonContract" {
+		contract, err := CompileRawJSONContract(document)
+		if err != nil {
+			return nil, err
+		}
+		return json.Marshal(contract)
+	}
 	var options ProjectionOptions
 	if err := decodeOptions(request.Options, &options); err != nil {
 		return nil, err

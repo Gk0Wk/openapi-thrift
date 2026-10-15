@@ -29,6 +29,12 @@
 | `multipart` 普通字段 | 可导出标准 `multipart/form-data` object | 已支持 | 纳入 profile |
 | `multipart` 文件字段 | APIFox 可导出 `string + format=binary` | 明确不支持 | 禁止项；Hertz 官方文档说明 IDL 场景不支持文件绑定 |
 
+## 显式严格 JSON 扩展（2026-10-15，未发布）
+
+上表的禁止项适用于普通未标记投影。具名组件使用 `x-ispark-raw-json: true` 时，Go 编译器接受闭合对象及受限 `oneOf + discriminator`；同一操作的 typed envelope 也必须可严格验证。`oneOf` 必须具有可唯一判别的标签，不支持任意联合、远程引用或静默 validator 逃生口。实际约束以 `raw_json.go` 和正负测试为准，完整输入见 [fixture](tests/fixtures/raw-json-envelope.openapi.json)。这不是新的 APIFox UI 导出验收声明。
+
+请求/响应共用组件将生成方向独立的类型。required nullable/map 响应保留 key。此扩展必须配套 backend 的 strict template/runtime，不允许把 binary typedef 直接交给普通 JSON binder。
+
 ## 成功子集 fixture
 
 已从真实导出裁出一份“当前支持能力子集”：

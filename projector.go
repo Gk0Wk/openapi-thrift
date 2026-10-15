@@ -18,10 +18,13 @@ var bodyRef = regexp.MustCompile(`^#/components/requestBodies/([^/]+)$`)
 var formatValidators = map[string]string{"base64": "base64", "date": "datetime=2006-01-02", "date-time": "datetime=2006-01-02T15:04:05Z07:00", "email": "email", "e164": "e164", "hexcolor": "hexcolor", "hostname": "hostname_rfc1123", "ipv4": "ipv4", "ipv6": "ipv6", "json": "json", "jwt": "jwt", "uri": "uri", "url": "url", "ulid": "ulid", "uuid": "uuid", "uuid3": "uuid3", "uuid4": "uuid4", "uuid5": "uuid5"}
 
 type projector struct {
-	schemas, bodies  *Value
-	definitions      map[string]ThriftStruct
-	order            []string
-	inProgress, used map[string]bool
+	schemas, bodies                          *Value
+	raw                                      *rawCompiler
+	directions                               map[string]int
+	responseDirection, rawOperation, rawBody bool
+	definitions                              map[string]ThriftStruct
+	order                                    []string
+	inProgress, used                         map[string]bool
 }
 
 func Convert(input []byte, options ProjectionOptions) (ProjectionResult, error) {
@@ -65,7 +68,14 @@ func checkDocument(document *Value) error {
 }
 
 func Project(document *Value, options ProjectionOptions) (ThriftDocument, error) {
-	p := &projector{schemas: document.Get("components").Get("schemas"), bodies: document.Get("components").Get("requestBodies"), definitions: map[string]ThriftStruct{}, inProgress: map[string]bool{}, used: map[string]bool{}}
+	raw, err := compileRawJSON(document)
+	if err != nil {
+		return ThriftDocument{}, err
+	}
+	p := &projector{raw: raw, directions: componentDirections(document), schemas: document.Get("components").Get("schemas"), bodies: document.Get("components").Get("requestBodies"), definitions: map[string]ThriftStruct{}, inProgress: map[string]bool{}, used: map[string]bool{}}
+	if err := p.reserveComponentNames(); err != nil {
+		return ThriftDocument{}, err
+	}
 	service := options.ServiceName
 	if service == "" {
 		service = pascal(document.Get("info").Get("title").Str())
@@ -101,10 +111,20 @@ func Project(document *Value, options ProjectionOptions) (ThriftDocument, error)
 			if name == "" {
 				name = fallbackMethod(method, path)
 			}
+			p.rawOperation = false
+			for _, rawOp := range raw.contract.Operations {
+				if rawOp.Method == method && rawOp.Path == path {
+					p.rawOperation = true
+				}
+			}
+			p.responseDirection = false
+			p.rawBody = false
 			request, err := p.request(item, op, method, path, name)
 			if err != nil {
 				return result, err
 			}
+			p.responseDirection = true
+			p.rawBody = p.rawOperation
 			response, err := p.response(op, name)
 			if err != nil {
 				return result, err
@@ -213,12 +233,20 @@ func (p *projector) request(item, op *Value, method, path, methodName string) (s
 		if err != nil {
 			return "", err
 		}
+		if p.rawOperation {
+			if len(tags) == 0 {
+				tags = []string{`go.tag='json:"-"'`}
+			} else {
+				tags[0] = strings.TrimSuffix(tags[0], "'") + ` json:"-"'`
+			}
+		}
 		fields = append(fields, ThriftField{ID: len(fields) + 1, Requiredness: requiredness, Type: typ, Name: fieldName, Annotations: append([]string{fmt.Sprintf("api.%s=\"%s\"", location, paramName)}, tags...), Comment: comments(param.Get("description").Str())})
 	}
 	if body := op.Get("requestBody"); body.Truth() {
 		if noBodyMethods[method] {
 			return "", projectionError(strings.ToUpper(method)+" 请求不允许 requestBody", path)
 		}
+		p.rawBody = p.rawOperation
 		extra, err := p.requestBody(body, name, path+"."+method+".requestBody", len(fields)+1, used)
 		if err != nil {
 			return "", err
@@ -298,7 +326,7 @@ func (p *projector) requestBody(body *Value, name, pointer string, start int, us
 	if err != nil {
 		return nil, err
 	}
-	if err = assertSupported(schema, pointer); err != nil {
+	if err = p.supported(schema, pointer); err != nil {
 		return nil, err
 	}
 	if !objectSchema(schema) {
@@ -343,7 +371,11 @@ func (p *projector) requestBody(body *Value, name, pointer string, start int, us
 		if err != nil {
 			return nil, err
 		}
-		tags, err := p.goTags(field.Value, required[field.Name], true, "optional", fieldPointer)
+		tagName := fieldName
+		if p.rawOperation {
+			tagName = field.Name
+		}
+		tags, err := p.fieldTags(field.Value, required[field.Name], tagName, fieldPointer)
 		if err != nil {
 			return nil, err
 		}
@@ -367,7 +399,15 @@ func (p *projector) response(op *Value, methodName string) (string, error) {
 	if len(codes) > 1 {
 		return "", projectionError("第一版暂不支持多个 2xx success response，请先在 OpenAPI profile 中收敛", methodName)
 	}
-	contentType, media, err := singleContent(responses.Get(codes[0]).Get("content"), methodName+".responses")
+	response := responses.Get(codes[0])
+	var err error
+	if response.Has("$ref") {
+		response, err = p.raw.container(response, "responses", methodName+".responses")
+		if err != nil {
+			return "", err
+		}
+	}
+	contentType, media, err := singleContent(response.Get("content"), methodName+".responses")
 	if err != nil {
 		return "", err
 	}
@@ -416,7 +456,27 @@ func (p *projector) schemaType(input *Value, suggested, pointer string, depth in
 	if err != nil {
 		return "", err
 	}
-	if err := assertSupported(schema, pointer); err != nil {
+	if schema.Has(rawMarker) {
+		if !p.rawBody {
+			return "", projectionError("raw JSON 类型仅允许严格操作 body", pointer)
+		}
+		if name == "" {
+			return "", projectionError("raw JSON 需要具名组件", pointer)
+		}
+		sourceName := ""
+		for source := range p.raw.marked {
+			if p.componentName(source) == name {
+				sourceName = source
+				break
+			}
+		}
+		if sourceName == "" {
+			return "", projectionError("raw component identity missing", pointer)
+		}
+		p.register(ThriftStruct{Name: name, Typedef: "binary", RawComponent: sourceName})
+		return name, nil
+	}
+	if err := p.supported(schema, pointer); err != nil {
 		return "", err
 	}
 	if enum := schema.Get("enum").List(); len(enum) > 0 {
@@ -462,7 +522,11 @@ func (p *projector) schemaType(input *Value, suggested, pointer string, depth in
 			if err != nil {
 				return "", err
 			}
-			tags, err := p.goTags(field.Value, required[field.Name], true, "optional", fieldPointer)
+			tagName := fieldName
+			if p.rawOperation {
+				tagName = field.Name
+			}
+			tags, err := p.fieldTags(field.Value, required[field.Name], tagName, fieldPointer)
 			if err != nil {
 				return "", err
 			}
@@ -516,7 +580,7 @@ func (p *projector) resolve(input *Value, pointer string, depth int) (*Value, st
 			return nil, "", projectionError("找不到 schema 引用 "+ref, pointer)
 		}
 		value, _, err := p.resolve(schema, pointer, depth+1)
-		return value, pascal(match[1]), err
+		return value, p.componentName(match[1]), err
 	}
 	if all := input.Get("allOf").List(); len(all) > 0 {
 		merged := input.Clone()
@@ -957,4 +1021,11 @@ func valueText(v *Value) string {
 }
 func equalValue(a, b *Value) bool {
 	return valueText(a) == valueText(b) && ((a == nil && b == nil) || (a != nil && b != nil && a.Kind == b.Kind))
+}
+
+func (p *projector) supported(schema *Value, pointer string) error {
+	if p.rawBody {
+		return nil
+	} // The entire body was compiled and checked before projection.
+	return assertSupported(schema, pointer)
 }

@@ -1,8 +1,10 @@
 package openapithrift
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Gk0Wk/openapi-thrift/rawjson"
 	"math"
 	"strings"
 )
@@ -66,6 +68,20 @@ func ValidateDocument(document *Value, options ValidationOptions) (ValidationRes
 	}
 	c := &profileContext{document: document, issues: []ValidationIssue{}, operationIDs: map[string]bool{}, active: map[*Value]bool{}, budget: 100_000}
 	c.schemas = document.Get("components").Get("schemas")
+	compiled, rawErr := compileRawJSON(document)
+	if rawErr != nil {
+		c.err("hz.raw_json.contract", "#", rawErr.Error())
+	} else {
+		c.rawIndex = compiled.index
+		body, err := json.Marshal(compiled.contract)
+		if err != nil {
+			return ValidationResult{}, err
+		}
+		c.rawValidator, err = rawjson.LoadContract(body)
+		if err != nil {
+			return ValidationResult{}, err
+		}
+	}
 	c.securitySchemes = document.Get("components").Get("securitySchemes")
 	c.root()
 	c.authSchemes()
@@ -102,6 +118,8 @@ func ValidateDocument(document *Value, options ValidationOptions) (ValidationRes
 }
 
 type profileContext struct {
+	rawIndex                           map[string]*Value
+	rawValidator                       *rawjson.Contract
 	document, schemas, securitySchemes *Value
 	issues                             []ValidationIssue
 	operationIDs                       map[string]bool
@@ -444,12 +462,14 @@ func (c *profileContext) schema(input *Value, pointer string, depth int) {
 	defer delete(c.active, schema)
 	c.schemaExamples(schema, pointer)
 	c.schemaMocks(schema, pointer)
-	c.unsupported(schema, pointer)
+	if c.rawIndex[pointer] == nil {
+		c.unsupported(schema, pointer)
+	}
 	additional := schema.Get("additionalProperties")
 	if isBool(additional, true) {
 		c.err("hz.schema.additional_properties_true", pointer+"/additionalProperties", "Hz/Thrift profile 不支持 additionalProperties: true")
 	}
-	if isBool(additional, false) {
+	if isBool(additional, false) && c.rawIndex[pointer] == nil {
 		c.err("hz.schema.additional_properties_false", pointer+"/additionalProperties", "additionalProperties:false 需要 binder/decoder 级语义，不能投影到字段 validator")
 	}
 	if additional != nil && (additional.Is(Object) || additional.Is(Null) || additional.Is(Array)) && len(schema.Get("properties").Entries()) > 0 {
@@ -571,6 +591,24 @@ func (c *profileContext) components() {
 	}
 }
 func (c *profileContext) example(input, value *Value, pointer string, depth int) {
+	descriptor := c.rawExampleDescriptor(pointer)
+	if descriptor != nil {
+		schemaBody, err := json.Marshal(descriptor)
+		if err != nil {
+			c.err("apifox.raw_example", pointer, err.Error())
+			return
+		}
+		valueBody, err := json.Marshal(value)
+		if err != nil {
+			c.err("apifox.raw_example", pointer, err.Error())
+			return
+		}
+		if err := c.rawValidator.ValidateSchema(schemaBody, valueBody); err != nil {
+			c.err("apifox.raw_example", pointer, err.Error())
+		}
+		return
+	}
+
 	if !c.step(pointer, depth) {
 		return
 	}
@@ -747,4 +785,19 @@ func hasManualValidator(value *Value) bool {
 func profileJSONContent(value string) bool {
 	value = strings.ToLower(strings.TrimSpace(value))
 	return value == "application/json" || strings.HasPrefix(value, "application/json;")
+}
+
+func (c *profileContext) rawExampleDescriptor(pointer string) *Value {
+	for _, marker := range []string{"/example", "/examples/"} {
+		if i := strings.LastIndex(pointer, marker); i >= 0 {
+			base := pointer[:i]
+			if value := c.rawIndex[base]; value != nil {
+				return value
+			}
+			if value := c.rawIndex[base+"/schema"]; value != nil {
+				return value
+			}
+		}
+	}
+	return nil
 }

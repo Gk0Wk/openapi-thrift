@@ -18,7 +18,7 @@ struct NullableAnyOfCandidateRequest {
 }
 
 struct MutationNullableResponse {
-  1: optional string nickname (go.tag='validate:"required,min=2,max=16"')
+  1: optional string nickname (go.tag='validate:"required,min=2,max=16" json:"nickname"')
 }
 
 // Mutation target: non-default query array serialization

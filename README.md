@@ -36,6 +36,12 @@ OpenAPI / Apifox export
 
 因此，修改 profile、投影规则或 unsupported 列表前，必须评估后端 Thrift、前端生成和现有 fixture 的影响；不要在后端或前端用兼容代码掩盖这里的契约失败。
 
+## 严格 raw JSON 与方向独立 DTO（未发布）
+
+需要 JSON 子树时，在具名组件显式标记 `x-ispark-raw-json: true`；这不会关闭校验。闭合字段、必填、nullable、受限 discriminator、重复键和 int64 边界均严格检查。完整可运行输入见 [raw envelope fixture](tests/fixtures/raw-json-envelope.openapi.json)。普通未标记 schema 仍按既有 profile 检查。
+
+同一组件同时用于请求和响应时会递归生成独立类型，例如 `DraftBodyRequest` / `DraftBodyResponse`。线上 JSON 名称不变，生成代码引用需要迁移。Go 的 `CompileRawJSONContract` 与 WASM 的 `compileRawJsonContract` 输出同一类型化契约，详见 [设计和边界](docs/strict-json-directional-plan.md)。
+
 ## 原生 CLI
 
 发行采用同一版本的 npm/WASM、Go Module 和六平台 CLI；流程与 OIDC 配置见 [分发说明](docs/distribution.md)。按使用场景选择入口并固定完整版本：

@@ -1,0 +1,127 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Raw Draft API", "version": "1.0.0" },
+  "components": {
+    "schemas": {
+      "DraftBody": {
+        "x-ispark-raw-json": true,
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind"],
+            "properties": {
+              "kind": { "type": "string", "enum": ["plan_edit"] },
+              "rows": {
+                "type": "array",
+                "maxItems": 256,
+                "nullable": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "maxLength": 200000,
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind"],
+            "properties": {
+              "kind": { "type": "string", "enum": ["cycle_review_edit"] },
+              "summary": { "type": "string", "nullable": true }
+            }
+          }
+        ],
+        "discriminator": { "propertyName": "kind" }
+      },
+      "DraftMetadata": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["foo-bar", "enabled"],
+        "properties": {
+          "foo-bar": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "clientVersion": { "type": "string" }
+        }
+      },
+      "SaveEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["revision", "body"],
+        "properties": {
+          "revision": { "type": "integer", "format": "int64", "minimum": 0 },
+          "body": { "$ref": "#/components/schemas/DraftBody" },
+          "metadata": { "$ref": "#/components/schemas/DraftMetadata" },
+          "clientVersion": { "type": "string" }
+        }
+      },
+      "SavedEnvelope": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "body"],
+        "properties": {
+          "code": { "type": "integer", "format": "int32", "enum": [0] },
+          "body": { "$ref": "#/components/schemas/DraftBody" },
+          "metadata": { "$ref": "#/components/schemas/DraftMetadata" },
+          "clientVersion": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/drafts/{draft_id}": {
+      "put": {
+        "operationId": "SaveDraft",
+        "parameters": [
+          {
+            "name": "draft_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SaveEnvelope" },
+              "example": {
+                "revision": 0,
+                "clientVersion": "",
+                "metadata": { "foo-bar": "", "enabled": false },
+                "body": {
+                  "kind": "plan_edit",
+                  "rows": [{}, { "text": null }, { "text": "  " }]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Draft saved",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SavedEnvelope" },
+                "example": {
+                  "code": 0,
+                  "clientVersion": "",
+                  "metadata": { "foo-bar": "", "enabled": false },
+                  "body": { "kind": "cycle_review_edit", "summary": null }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -91,6 +91,8 @@ export interface OpenApiSchemaObject {
   description?: string
   example?: JsonValue
   examples?: JsonValue[]
+  "x-ispark-raw-json"?: boolean
+  discriminator?: { propertyName: string }
   nullable?: boolean
   default?: JsonValue
   minimum?: number
@@ -157,6 +159,8 @@ export interface ThriftDocument {
 }
 
 export interface ThriftStruct {
+  typedef?: "binary"
+  rawComponent?: string
   name: string
   comment?: string[]
   fields: ThriftField[]

@@ -1,0 +1,118 @@
+{
+  "openapi": "3.0.3",
+  "info": { "title": "Nullable Response" },
+  "paths": {
+    "/draft": {
+      "get": {
+        "operationId": "getDraft",
+        "responses": {
+          "200": {
+            "description": "Current draft, including explicit absence",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DraftEnvelope" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/shared": {
+      "post": {
+        "operationId": "saveShared",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["shared", "request_only"],
+                "properties": {
+                  "shared": { "$ref": "#/components/schemas/Shared" },
+                  "request_only": { "$ref": "#/components/schemas/RequestOnly" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Shared result",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Shared" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DraftEnvelope": {
+        "type": "object",
+        "required": [
+          "draft",
+          "text",
+          "enabled",
+          "count",
+          "ratio",
+          "rows",
+          "labels",
+          "union_text",
+          "via_alias",
+          "shared"
+        ],
+        "properties": {
+          "draft": {
+            "type": "object",
+            "nullable": true,
+            "properties": { "title": { "type": "string" } }
+          },
+          "text": { "type": "string", "nullable": true, "minLength": 1 },
+          "enabled": { "type": "boolean", "nullable": true },
+          "count": { "type": "integer", "nullable": true },
+          "ratio": { "type": "number", "nullable": true },
+          "rows": {
+            "type": "array",
+            "nullable": true,
+            "items": { "$ref": "#/components/schemas/Shared" }
+          },
+          "labels": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": { "$ref": "#/components/schemas/Shared" }
+          },
+          "union_text": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+          "via_alias": { "$ref": "#/components/schemas/NullableDraftAlias" },
+          "shared": { "$ref": "#/components/schemas/Shared" },
+          "optional_text": { "type": "string", "nullable": true },
+          "optional_draft": { "$ref": "#/components/schemas/NullableDraft" }
+        }
+      },
+      "NullableDraftAlias": { "$ref": "#/components/schemas/NullableDraft" },
+      "NullableDraft": {
+        "type": "object",
+        "nullable": true,
+        "properties": { "title": { "type": "string" } }
+      },
+      "Shared": {
+        "type": "object",
+        "required": ["note", "clientVersion", "client_version"],
+        "properties": {
+          "note": { "type": "string", "nullable": true, "minLength": 2 },
+          "clientVersion": { "type": "string", "nullable": true },
+          "client_version": { "type": "string", "nullable": true },
+          "optional_note": { "type": "string", "nullable": true }
+        }
+      },
+      "RequestOnly": {
+        "type": "object",
+        "required": ["note"],
+        "properties": {
+          "note": { "type": "string", "nullable": true, "minLength": 2 }
+        }
+      }
+    }
+  }
+}

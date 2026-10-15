@@ -178,6 +178,67 @@ export function formatOpenApiRenderValidationIssues(
 export function buildRouteKey(method: string, path: string): string {
   return call("buildRouteKey", { method, path })
 }
+
+export interface RawJsonContract {
+  schemaVersion: 1
+  schemas: Record<string, RawJsonDescriptor>
+  operations: Array<{
+    method: string
+    path: string
+    successStatus: number
+    parameters: Array<{
+      in: "path" | "query" | "header" | "cookie"
+      name: string
+    }>
+    requestBody?: RawJsonDescriptor
+    requestBodyRequired?: boolean
+    responseBody?: RawJsonDescriptor
+  }>
+}
+export type RawJsonDescriptor =
+  | { $ref: string }
+  | {
+      type: "object"
+      properties: Record<string, RawJsonDescriptor>
+      required: string[]
+      additionalProperties: false
+      nullable?: true
+    }
+  | {
+      type: "array"
+      items: RawJsonDescriptor
+      minItems?: number
+      maxItems?: number
+      nullable?: true
+    }
+  | {
+      type: "string"
+      enum?: string[]
+      minLength?: number
+      maxLength?: number
+      format?: "uuid" | "ulid" | "date-time"
+      nullable?: true
+    }
+  | {
+      type: "integer"
+      enum?: number[]
+      minimum?: number
+      maximum?: number
+      format?: "int32" | "int64"
+      nullable?: true
+    }
+  | { type: "boolean"; nullable?: true }
+  | {
+      oneOf: RawJsonDescriptor[]
+      discriminator: { propertyName: string }
+      nullable?: true
+    }
+
+export function compileRawJsonContract(
+  input: OpenApiDocument,
+): RawJsonContract {
+  return call("compileRawJsonContract", { input })
+}
 export function normalizeRoutePath(path: string): string {
   return call("normalizeRoutePath", { path })
 }

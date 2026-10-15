@@ -22,9 +22,11 @@ type ThriftDocument struct {
 	Methods     []ThriftMethod `json:"methods"`
 }
 type ThriftStruct struct {
-	Name    string        `json:"name"`
-	Comment []string      `json:"comment,omitempty"`
-	Fields  []ThriftField `json:"fields"`
+	Name         string        `json:"name"`
+	RawComponent string        `json:"rawComponent,omitempty"`
+	Typedef      string        `json:"typedef,omitempty"`
+	Comment      []string      `json:"comment,omitempty"`
+	Fields       []ThriftField `json:"fields"`
 }
 type ThriftField struct {
 	ID           int      `json:"id"`
@@ -90,6 +92,10 @@ func RenderThrift(document ThriftDocument) string {
 	for _, definition := range document.Definitions {
 		lines = append(lines, "")
 		comment(definition.Comment, "")
+		if definition.Typedef != "" {
+			lines = append(lines, "typedef "+definition.Typedef+" "+definition.Name)
+			continue
+		}
 		lines = append(lines, "struct "+definition.Name+" {")
 		for _, field := range definition.Fields {
 			comment(field.Comment, "  ")
